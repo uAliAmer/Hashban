@@ -1,5 +1,6 @@
-# Cloudflare Pages config. Deploy: `npm run deploy` (or `npx wrangler pages deploy`).
-# Dashboard equivalent — Build command: `npm run build`, Output dir: `dist`.
+# wrangler.toml — used only for LOCAL CLI deploys (`npm run deploy:local`).
+# Cloudflare Pages dashboard deployments do NOT use this file.
+# Dashboard settings: build command = "npm run build", output dir = "dist", deploy command = (empty).
 name = "hashban"
 pages_build_output_dir = "dist"
 compatibility_date = "2026-05-29"
