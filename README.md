@@ -78,13 +78,17 @@ runtime fetch dependencies.
 **Dashboard (recommended):**
 
 1. Connect the GitHub repo in the Cloudflare Pages dashboard.
-2. Build command: `npm run build` · Output directory: `dist`
+2. Build command: **`npm run build`** · Output directory: **`dist`**
 3. Done — every push to `main` deploys automatically.
 
-**CLI (wrangler):**
+> **Note:** do not use `npm run deploy:local` as the Pages build command —
+> that script calls `wrangler pages deploy` which is only for local CLI use.
+> Cloudflare Pages handles the publish step itself; it only needs the build.
+
+**CLI (local, wrangler authenticated):**
 
 ```bash
-npm run deploy   # builds + npx wrangler pages deploy dist
+npm run deploy:local   # npm run build + wrangler pages deploy dist
 ```
 
 `public/_headers` ships with the build and tells Cloudflare to cache fingerprinted
