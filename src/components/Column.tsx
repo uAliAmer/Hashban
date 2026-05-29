@@ -9,31 +9,48 @@ import { Col, Card } from "@/lib/board";
 import { CardItem } from "./CardItem";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
 
 export function Column({
   col,
+  cards,
+  filtered,
+  hiddenCount,
+  focusedId,
   onAddCard,
   onEditCard,
   onDeleteCard,
   onRename,
+  onSetWip,
+  onFocusCard,
   onDelete,
 }: {
   col: Col;
+  cards: Card[]; // already filtered (§V.11)
+  filtered: boolean;
+  hiddenCount: number;
+  focusedId: string | null;
   onAddCard: (txt: string) => void;
   onEditCard: (card: Card) => void;
   onDeleteCard: (cardId: string) => void;
   onRename: (name: string) => void;
+  onSetWip: (wip?: number) => void;
+  onFocusCard: (id: string) => void;
   onDelete: () => void;
 }) {
   const [adding, setAdding] = useState(false);
   const [draft, setDraft] = useState("");
   const [editingName, setEditingName] = useState(false);
+  const [editingWip, setEditingWip] = useState(false);
 
   // empty-column drop target so cards can land in empty columns. §V.5
   const { setNodeRef } = useDroppable({
     id: `col-drop-${col.id}`,
     data: { type: "col", colId: col.id },
   });
+
+  // §V.12 — over-limit when a wip is set and real card count exceeds it.
+  const overLimit = col.wip !== undefined && col.cards.length > col.wip;
 
   function commitAdd() {
     const t = draft.trim();
@@ -65,12 +82,45 @@ export function Column({
             className="flex-1 truncate text-left text-sm font-semibold text-zinc-200"
             title="Click to rename"
           >
-            {col.name}{" "}
-            <span className="text-xs font-normal text-zinc-500">
-              {col.cards.length}
-            </span>
+            {col.name}
           </button>
         )}
+
+        {/* §V.12 — count / WIP badge; click to set limit */}
+        {editingWip ? (
+          <Input
+            autoFocus
+            type="number"
+            min={0}
+            defaultValue={col.wip ?? ""}
+            placeholder="∞"
+            onBlur={(e) => {
+              const v = e.target.value.trim();
+              onSetWip(v === "" ? undefined : Number(v));
+              setEditingWip(false);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") e.currentTarget.blur();
+              if (e.key === "Escape") setEditingWip(false);
+            }}
+            className="h-7 w-16"
+          />
+        ) : (
+          <button
+            onClick={() => setEditingWip(true)}
+            title="Set WIP limit"
+            className={cn(
+              "rounded px-1.5 py-0.5 text-xs tabular-nums",
+              overLimit
+                ? "bg-red-900/70 font-semibold text-red-200"
+                : "text-zinc-500 hover:bg-zinc-700 hover:text-zinc-300"
+            )}
+          >
+            {col.cards.length}
+            {col.wip !== undefined ? `/${col.wip}` : ""}
+          </button>
+        )}
+
         <Button
           variant="ghost"
           size="icon"
@@ -86,19 +136,26 @@ export function Column({
         className="flex min-h-2 flex-1 flex-col gap-2 overflow-y-auto"
       >
         <SortableContext
-          items={col.cards.map((c) => c.id)}
+          items={cards.map((c) => c.id)}
           strategy={verticalListSortingStrategy}
         >
-          {col.cards.map((card) => (
+          {cards.map((card) => (
             <CardItem
               key={card.id}
               card={card}
               colId={col.id}
+              focused={card.id === focusedId}
+              onFocus={() => onFocusCard(card.id)}
               onEdit={() => onEditCard(card)}
               onDelete={() => onDeleteCard(card.id)}
             />
           ))}
         </SortableContext>
+        {filtered && hiddenCount > 0 && (
+          <div className="px-1 text-[11px] text-zinc-500">
+            {hiddenCount} hidden by filter
+          </div>
+        )}
       </div>
 
       {adding ? (

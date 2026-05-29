@@ -3,6 +3,7 @@ import {
   Board,
   decode,
   defaultBoard,
+  demoBoard,
   encode,
   SOFT_LIMIT,
 } from "@/lib/board";
@@ -31,8 +32,10 @@ function loadInitial(): Board {
     } catch {
       /* ignore storage errors */
     }
+    // §V.10 — first visit (no hash & no cache): seed demo board.
+    return demoBoard();
   }
-  return defaultBoard(); // §V.8
+  return defaultBoard(); // §V.8 (hash present but invalid)
 }
 
 export type BoardApi = {

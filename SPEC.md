@@ -18,7 +18,7 @@ Single-page Kanban. Whole board state lives in URL hash. ⊥ backend. Share URL 
 ## §I — interfaces
 ```
 type Card  = { id: string; txt: string; desc?: string; color?: string; due?: string }
-type Col   = { id: string; name: string; cards: Card[] }
+type Col   = { id: string; name: string; cards: Card[]; wip?: number }
 type Board = { t: string; cols: Col[] }
 
 hash:  #<lz-string compressToEncodedURIComponent(JSON.stringify(Board))>
@@ -42,6 +42,10 @@ commit(board: Board): void                   // write hash + localStorage cache
 - V7: payload length ≥ 8000 → warn user, still function.
 - V8: empty hash on load → default board (cols Todo/Doing/Done).
 - V9: undo/redo operate on state snapshots, each step re-commits hash.
+- V10: first visit (⊥ hash & ⊥ cache) → seed demo board. returning|shared user untouched.
+- V11: search/filter = ephemeral UI state. ⊥ in board, ⊥ in hash, ⊥ persisted.
+- V12: col `wip?` set & cards.length > wip → over-limit signal. ⊥ block add (soft limit).
+- V13: roundtrip ! survive optional `wip` (V2 holds w/ & w/o field).
 
 ## §T — tasks
 ```
@@ -59,6 +63,12 @@ T10|x|localStorage autosave fallback|C,V1
 T11|x|import/export JSON|G
 T12|x|undo/redo via state snapshots|V9
 T13|x|README + LICENSE|G
+T14|x|first-visit demo board seed|V10,V8
+T15|x|card search/filter (ephemeral)|V11
+T16|x|column WIP limits (`wip?` field)|V12,V13
+T17|x|keyboard nav: arrows focus, Enter edit, Del delete, n new|G
+T18|x|mobile touch-drag (dnd-kit TouchSensor + delay)|V5
+T19|x|Cloudflare Pages prep (build cfg + headers)|C,G
 ```
 
 ## §B — bugs

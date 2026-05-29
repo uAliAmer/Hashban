@@ -1,0 +1,5 @@
+# Cloudflare Pages config. Deploy: `npm run deploy` (or `npx wrangler pages deploy`).
+# Dashboard equivalent — Build command: `npm run build`, Output dir: `dist`.
+name = "hashban"
+pages_build_output_dir = "dist"
+compatibility_date = "2026-05-29"

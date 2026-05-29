@@ -1,10 +1,12 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useBoard } from "@/hooks/useBoard";
 import { Board } from "@/components/Board";
 import { Toolbar } from "@/components/Toolbar";
 
 export default function App() {
   const api = useBoard();
+  // §V.11 — search/filter is ephemeral UI state: not in board, hash, or storage.
+  const [query, setQuery] = useState("");
 
   // keyboard: Ctrl/Cmd+Z undo, Ctrl/Cmd+Shift+Z (or Ctrl+Y) redo (§T12)
   useEffect(() => {
@@ -37,9 +39,11 @@ export default function App() {
         canRedo={api.canRedo}
         payloadLen={api.payloadLen}
         overLimit={api.overLimit}
+        query={query}
+        setQuery={setQuery}
       />
       <main className="min-h-0 flex-1">
-        <Board board={api.board} setBoard={api.setBoard} />
+        <Board board={api.board} setBoard={api.setBoard} query={query} />
       </main>
     </div>
   );

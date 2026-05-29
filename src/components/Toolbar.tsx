@@ -2,10 +2,12 @@ import { useRef, useState } from "react";
 import {
   Download,
   Redo2,
+  Search,
   Share2,
   Trash,
   Undo2,
   Upload,
+  X,
 } from "lucide-react";
 import { Board, defaultBoard, isBoard, SOFT_LIMIT } from "@/lib/board";
 import { renameBoard } from "@/lib/ops";
@@ -21,6 +23,8 @@ export function Toolbar({
   canRedo,
   payloadLen,
   overLimit,
+  query,
+  setQuery,
 }: {
   board: Board;
   setBoard: (next: Board | ((p: Board) => Board)) => void;
@@ -30,6 +34,8 @@ export function Toolbar({
   canRedo: boolean;
   payloadLen: number;
   overLimit: boolean;
+  query: string;
+  setQuery: (q: string) => void;
 }) {
   const [copied, setCopied] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -104,6 +110,29 @@ export function Toolbar({
           {board.t}
         </button>
       )}
+
+      {/* §V.11 — ephemeral search/filter, never persisted */}
+      <div className="relative ml-2 hidden sm:block">
+        <Search
+          size={14}
+          className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-zinc-500"
+        />
+        <Input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Filter cards…"
+          className="h-8 w-44 pl-7 pr-7"
+        />
+        {query && (
+          <button
+            onClick={() => setQuery("")}
+            aria-label="Clear filter"
+            className="absolute right-1.5 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-200"
+          >
+            <X size={14} />
+          </button>
+        )}
+      </div>
 
       <div className="ml-auto flex items-center gap-1">
         {overLimit && (

@@ -46,6 +46,16 @@ export function renameBoard(b: Board, t: string): Board {
   return { ...b, t };
 }
 
+// §V.12 — set or clear a column WIP limit. undefined|≤0 removes it.
+export function setColumnWip(b: Board, colId: string, wip?: number): Board {
+  return mapCol(b, colId, (c) => {
+    const next = { ...c };
+    if (wip === undefined || wip <= 0 || Number.isNaN(wip)) delete next.wip;
+    else next.wip = Math.floor(wip);
+    return next;
+  });
+}
+
 // drag-drop: move card to target column at target index. §V.5
 export function moveCard(
   b: Board,

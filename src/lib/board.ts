@@ -16,6 +16,7 @@ export type Col = {
   id: string;
   name: string;
   cards: Card[];
+  wip?: number; // §V.12 soft work-in-progress limit
 };
 
 export type Board = {
@@ -44,6 +45,61 @@ export function defaultBoard(): Board {
       { id: genId(), name: "Todo", cards: [] },
       { id: genId(), name: "Doing", cards: [] },
       { id: genId(), name: "Done", cards: [] },
+    ],
+  };
+}
+
+// §V.10 — first-visit seed. Showcases cards, colors, due dates, desc, WIP.
+export function demoBoard(): Board {
+  const today = new Date();
+  const iso = (d: number) => {
+    const t = new Date(today);
+    t.setDate(t.getDate() + d);
+    return t.toISOString().slice(0, 10);
+  };
+  return {
+    t: "Hashban Demo",
+    cols: [
+      {
+        id: genId(),
+        name: "Backlog",
+        cards: [
+          { id: genId(), txt: "Drag me to another column →", color: "#3b82f6" },
+          {
+            id: genId(),
+            txt: "Click a card to edit",
+            desc: "Add a description, label color, or due date.",
+            color: "#a855f7",
+          },
+          { id: genId(), txt: "Try the search box to filter cards" },
+        ],
+      },
+      {
+        id: genId(),
+        name: "In Progress",
+        wip: 2,
+        cards: [
+          {
+            id: genId(),
+            txt: "This column has a WIP limit of 2",
+            color: "#f59e0b",
+            due: iso(2),
+          },
+          { id: genId(), txt: "Overdue example", color: "#ef4444", due: iso(-1) },
+        ],
+      },
+      {
+        id: genId(),
+        name: "Done",
+        cards: [
+          {
+            id: genId(),
+            txt: "Hit Share — the URL *is* the board",
+            desc: "No backend. The whole board lives in the link.",
+            color: "#10b981",
+          },
+        ],
+      },
     ],
   };
 }
@@ -78,6 +134,7 @@ export function isBoard(x: unknown): x is Board {
     const col = c as Record<string, unknown>;
     if (typeof col.id !== "string" || typeof col.name !== "string")
       return false;
+    if (col.wip !== undefined && typeof col.wip !== "number") return false; // §V.13
     if (!Array.isArray(col.cards)) return false;
     return col.cards.every((cd) => {
       if (typeof cd !== "object" || cd === null) return false;

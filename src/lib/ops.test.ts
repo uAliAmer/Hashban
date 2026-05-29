@@ -8,6 +8,7 @@ import {
   deleteColumn,
   moveCard,
   moveColumn,
+  setColumnWip,
 } from "./ops";
 import { defaultBoard, type Board } from "./board";
 
@@ -83,6 +84,25 @@ describe("moveCard (§V.5)", () => {
     const b = freshWithCards();
     const n = moveCard(b, b.cols[0].id, b.cols[1].id, "nope", 0);
     expect(n).toBe(b);
+  });
+});
+
+describe("setColumnWip (§V.12)", () => {
+  it("sets a floored positive limit", () => {
+    const b = defaultBoard();
+    const n = setColumnWip(b, b.cols[0].id, 3.7);
+    expect(n.cols[0].wip).toBe(3);
+  });
+  it("clears wip on undefined / 0 / negative", () => {
+    let b = defaultBoard();
+    const id = b.cols[0].id;
+    b = setColumnWip(b, id, 5);
+    expect(b.cols[0].wip).toBe(5);
+    b = setColumnWip(b, id, 0);
+    expect("wip" in b.cols[0]).toBe(false);
+    b = setColumnWip(b, id, 5);
+    b = setColumnWip(b, id, undefined);
+    expect("wip" in b.cols[0]).toBe(false);
   });
 });
 

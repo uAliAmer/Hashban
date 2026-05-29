@@ -7,13 +7,17 @@ import { cn } from "@/lib/utils";
 export function CardItem({
   card,
   colId,
+  focused,
   onEdit,
   onDelete,
+  onFocus,
 }: {
   card: Card;
   colId: string;
+  focused?: boolean;
   onEdit: () => void;
   onDelete: () => void;
+  onFocus: () => void;
 }) {
   const {
     attributes,
@@ -40,7 +44,15 @@ export function CardItem({
     <div
       ref={setNodeRef}
       style={style}
-      className="group relative rounded-md border border-zinc-700 bg-[var(--color-card-bg)] p-2 pl-6 text-sm shadow-sm"
+      data-card-id={card.id}
+      tabIndex={0}
+      onFocus={onFocus}
+      className={cn(
+        "group relative rounded-md border bg-[var(--color-card-bg)] p-2 pl-6 text-sm shadow-sm focus:outline-none",
+        focused
+          ? "border-zinc-400 ring-2 ring-zinc-400"
+          : "border-zinc-700"
+      )}
     >
       {card.color && (
         <span

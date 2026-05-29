@@ -3,6 +3,7 @@ import {
   encode,
   decode,
   defaultBoard,
+  demoBoard,
   isBoard,
   genId,
   type Board,
@@ -39,6 +40,44 @@ describe("§V.2 roundtrip lossless", () => {
       cols: [{ id: "x", name: "↑↓", cards: [{ id: "y", txt: "emoji 🎉" }] }],
     };
     expect(decode(encode(b))).toEqual(b);
+  });
+});
+
+describe("§V.13 optional wip survives roundtrip", () => {
+  it("roundtrips a column with a wip limit", () => {
+    const b: Board = {
+      t: "x",
+      cols: [
+        { id: "c1", name: "Doing", wip: 3, cards: [] },
+        { id: "c2", name: "Done", cards: [] },
+      ],
+    };
+    expect(decode(encode(b))).toEqual(b);
+  });
+  it("isBoard rejects non-numeric wip", () => {
+    const bad = { t: "x", cols: [{ id: "c", name: "n", wip: "3", cards: [] }] };
+    expect(isBoard(bad)).toBe(false);
+  });
+  it("isBoard accepts column without wip", () => {
+    expect(isBoard({ t: "x", cols: [{ id: "c", name: "n", cards: [] }] })).toBe(
+      true
+    );
+  });
+});
+
+describe("§V.10 demo board", () => {
+  it("is a valid, roundtrippable board", () => {
+    const b = demoBoard();
+    expect(isBoard(b)).toBe(true);
+    expect(decode(encode(b))).toEqual(b);
+  });
+  it("has unique card + column ids", () => {
+    const b = demoBoard();
+    const ids = [
+      ...b.cols.map((c) => c.id),
+      ...b.cols.flatMap((c) => c.cards.map((cd) => cd.id)),
+    ];
+    expect(new Set(ids).size).toBe(ids.length);
   });
 });
 

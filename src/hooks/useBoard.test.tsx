@@ -2,11 +2,13 @@ import { describe, it, expect, beforeEach } from "vitest";
 import { renderHook, act } from "@testing-library/react";
 import { useBoard } from "./useBoard";
 import { addCard } from "@/lib/ops";
-import { decode } from "@/lib/board";
+import { decode, defaultBoard, encode } from "@/lib/board";
 
 beforeEach(() => {
-  window.location.hash = "";
-  // localStorage may be absent in some jsdom/node builds; hook guards it too.
+  // Seed a known empty board into the hash so the hook loads from it (the
+  // single source of truth, §V.1) instead of seeding the first-visit demo
+  // board (§V.10), which only fires when hash AND cache are both empty.
+  window.location.hash = encode(defaultBoard());
   window.localStorage?.clear();
 });
 
@@ -41,5 +43,15 @@ describe("§V.9 undo/redo via snapshots, each re-commits hash", () => {
 
     act(() => result.current.redo());
     expect(result.current.board.cols[0].cards).toHaveLength(1);
+  });
+});
+
+describe("§V.10 first-visit demo seed", () => {
+  it("seeds demo board when hash and cache are both empty", () => {
+    window.location.hash = "";
+    window.localStorage?.clear();
+    const { result } = renderHook(() => useBoard());
+    expect(result.current.board.t).toBe("Hashban Demo");
+    expect(result.current.board.cols.length).toBeGreaterThan(0);
   });
 });
