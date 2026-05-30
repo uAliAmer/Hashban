@@ -276,6 +276,7 @@ export function Board({
         <div
           ref={scrollRef}
           className="flex h-full items-start gap-3 overflow-x-auto p-3"
+          onClick={(e) => { if (e.target === e.currentTarget) setFocusedId(null); }}
         >
           {visible.map(({ col, cards }) => (
             <Column
