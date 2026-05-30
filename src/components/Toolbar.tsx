@@ -13,6 +13,7 @@ import {
   X,
 } from "lucide-react";
 import { BoardSidebar } from "@/components/BoardSidebar";
+import { ThemePicker } from "@/components/ThemePicker";
 import { Board, defaultBoard, isBoard, SOFT_LIMIT } from "@/lib/board";
 import { addLane, renameBoard } from "@/lib/ops";
 import { Button } from "@/components/ui/button";
@@ -260,6 +261,7 @@ export function Toolbar({
       </div>
 
       <div className="ml-auto flex items-center gap-1">
+        <ThemePicker />
         {/* §V.22 — compact view toggle */}
         <Button
           variant="ghost"
