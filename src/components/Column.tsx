@@ -82,7 +82,6 @@ export function Column({
   const sortableStyle = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0.4 : 1,
   };
 
   // empty-column drop target §V.5
@@ -98,6 +97,17 @@ export function Column({
     if (t) onAddCard(t);
     setDraft("");
     setAdding(false);
+  }
+
+  // §V.20 — drag placeholder: show drop slot while this column is being dragged
+  if (isDragging) {
+    return (
+      <div
+        ref={setSortableRef}
+        style={sortableStyle}
+        className="w-72 shrink-0 rounded-lg border-2 border-dashed border-zinc-600 bg-zinc-800/20"
+      />
+    );
   }
 
   // §V.23 — collapsed: slim vertical bar
