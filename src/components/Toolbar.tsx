@@ -38,6 +38,9 @@ function ShareButton() {
     await copyUrl();
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
+    // also animate the link row so user sees confirmation inside the popover
+    setLinkCopied(true);
+    setTimeout(() => setLinkCopied(false), 2000);
 
     if (!qrOpen) {
       QRCode.toDataURL(window.location.href, {
