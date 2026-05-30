@@ -106,10 +106,29 @@ export function Board({
     const { active, over } = e;
     if (!over || active.id === over.id) return;
 
-    // §V.20 — column reorder
+    // §V.20 — column reorder.
+    // over.id can be: column id (correct), "col-drop-<id>" (card droppable),
+    // or a card id — resolve all three to a column id.
     if (wasCol) {
+      const overId = String(over.id);
+      let targetColId: string | undefined;
+
+      if (board.cols.some((c) => c.id === overId)) {
+        targetColId = overId;
+      } else if (overId.startsWith("col-drop-")) {
+        targetColId = overId.replace("col-drop-", "");
+      } else {
+        // overId is a card id — find which column owns it
+        for (const c of board.cols) {
+          if (c.cards.some((cd) => cd.id === overId)) {
+            targetColId = c.id;
+            break;
+          }
+        }
+      }
+
       const fromIdx = board.cols.findIndex((c) => c.id === String(active.id));
-      const toIdx = board.cols.findIndex((c) => c.id === String(over.id));
+      const toIdx = board.cols.findIndex((c) => c.id === targetColId);
       if (fromIdx >= 0 && toIdx >= 0 && fromIdx !== toIdx) {
         setBoard((b) => moveColumn(b, fromIdx, toIdx));
       }
