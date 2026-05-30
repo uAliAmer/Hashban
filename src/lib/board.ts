@@ -65,7 +65,7 @@ export function defaultBoard(): Board {
   };
 }
 
-// §V.10 — first-visit seed. Showcases cards, colors, due dates, desc, WIP.
+// §V.10 — first-visit seed. Showcases all major features.
 export function demoBoard(): Board {
   const today = new Date();
   const iso = (d: number) => {
@@ -79,40 +79,80 @@ export function demoBoard(): Board {
       {
         id: genId(),
         name: "Backlog",
+        color: "#6b7280",
         cards: [
-          { id: genId(), txt: "Drag me to another column →", color: "#3b82f6" },
+          {
+            id: genId(),
+            txt: "Drag this card to another column",
+            desc: "Click and hold anywhere on the card to drag it.",
+            color: "#3b82f6",
+            priority: "P2",
+          },
           {
             id: genId(),
             txt: "Click a card to edit",
-            desc: "Add a description, label color, or due date.",
+            desc: "Set title, description, priority, color, due date, and checklist items.",
             color: "#a855f7",
+            priority: "P3",
           },
-          { id: genId(), txt: "Try the search box to filter cards" },
+          {
+            id: genId(),
+            txt: "Launch a feature",
+            checklist: [
+              { id: genId(), txt: "Write spec", done: true },
+              { id: genId(), txt: "Build it", done: true },
+              { id: genId(), txt: "Ship to prod", done: false },
+            ],
+            color: "#f59e0b",
+            priority: "P1",
+            due: iso(3),
+          },
+          {
+            id: genId(),
+            txt: "Try the search bar — type to filter cards across all columns",
+          },
         ],
       },
       {
         id: genId(),
         name: "In Progress",
+        color: "#f59e0b",
         wip: 2,
         cards: [
           {
             id: genId(),
-            txt: "This column has a WIP limit of 2",
+            txt: "This column has a WIP limit of 2 — badge turns red when exceeded",
             color: "#f59e0b",
-            due: iso(2),
+            due: iso(1),
           },
-          { id: genId(), txt: "Overdue example", color: "#ef4444", due: iso(-1) },
+          {
+            id: genId(),
+            txt: "Overdue card example",
+            color: "#ef4444",
+            priority: "P1",
+            due: iso(-2),
+          },
         ],
       },
       {
         id: genId(),
         name: "Done",
+        color: "#10b981",
         cards: [
           {
             id: genId(),
-            txt: "Hit Share — the URL *is* the board",
-            desc: "No backend. The whole board lives in the link.",
+            txt: "Share button → copies URL + shows QR code",
+            desc: "The URL is the board. Send it to anyone — no account needed.",
             color: "#10b981",
+          },
+          {
+            id: genId(),
+            txt: "Save boards to the sidebar (🔖) — auto-saves every edit",
+            color: "#3b82f6",
+          },
+          {
+            id: genId(),
+            txt: "Try ?template=sprint or ?template=gtd in the URL for preset boards",
           },
         ],
       },
