@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { compressToEncodedURIComponent } from "lz-string";
+import { encode as cborEncode } from "cbor-x";
+import { deflateSync } from "fflate";
 import {
   encode,
   decode,
@@ -89,9 +90,13 @@ describe("§V.3 decode never throws, returns null on bad input", () => {
   it("returns null on empty string", () => {
     expect(decode("")).toBeNull();
   });
-  it("returns null on valid lz of non-board JSON", () => {
-    // manually compress invalid JSON — encode() would crash on non-Board input
-    const bad = compressToEncodedURIComponent(JSON.stringify({ foo: "bar" }));
+  it("returns null on valid CBOR+deflate of non-board data", () => {
+    // manually compress invalid object — encode() would crash on non-Board input
+    const cbor = cborEncode({ foo: "bar" });
+    const compressed = deflateSync(cbor);
+    let b = "";
+    for (let i = 0; i < compressed.length; i++) b += String.fromCharCode(compressed[i]);
+    const bad = btoa(b).replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "");
     expect(decode(bad)).toBeNull();
   });
 });

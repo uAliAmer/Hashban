@@ -1,7 +1,20 @@
-import {
-  compressToEncodedURIComponent,
-  decompressFromEncodedURIComponent,
-} from "lz-string";
+import { encode as cborEncode, decode as cborDecodeRaw } from "cbor-x";
+import { deflateSync, inflateSync } from "fflate";
+
+// base64url helpers (RFC 4648 §5) — always URL-safe, no padding
+function b64uEncode(bytes: Uint8Array): string {
+  let b = "";
+  for (let i = 0; i < bytes.length; i++) b += String.fromCharCode(bytes[i]);
+  return btoa(b).replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "");
+}
+
+function b64uDecode(s: string): Uint8Array {
+  const padded = s.replace(/-/g, "+").replace(/_/g, "/");
+  const b = atob(padded);
+  const out = new Uint8Array(b.length);
+  for (let i = 0; i < b.length; i++) out[i] = b.charCodeAt(i);
+  return out;
+}
 
 // §I — core data model
 export type CheckItem = {
@@ -284,22 +297,23 @@ function fromWire(w: WireBoard): Board {
   };
 }
 
-// §I — encode(board) -> hash payload (v2 compact wire format)
+// §I — encode: WireBoard → CBOR → deflate → base64url
 export function encode(board: Board): string {
-  return compressToEncodedURIComponent(JSON.stringify(toWire(board)));
+  const cbor = cborEncode(toWire(board));
+  const compressed = deflateSync(cbor, { level: 9 });
+  return b64uEncode(compressed);
 }
 
-// §I — decode(payload) -> Board | null  (§V.3: null on any failure, never throw)
+// §I — decode: base64url → inflate → CBOR → WireBoard → Board  (§V.3 safe)
 export function decode(payload: string): Board | null {
   if (!payload) return null;
   try {
-    const json = decompressFromEncodedURIComponent(payload);
-    if (!json) return null;
-    const parsed = JSON.parse(json);
-    if (!parsed || typeof parsed !== "object" || parsed.v !== 2) return null;
-    const w = parsed as WireBoard;
-    if (!w.t || !Array.isArray(w.c)) return null;
-    const board = fromWire(w);
+    const compressed = b64uDecode(payload);
+    const cbor = inflateSync(compressed);
+    const wire = cborDecodeRaw(cbor) as WireBoard;
+    if (!wire || typeof wire !== "object" || wire.v !== 2) return null;
+    if (!wire.t || !Array.isArray(wire.c)) return null;
+    const board = fromWire(wire);
     return isBoard(board) ? board : null;
   } catch {
     return null;
