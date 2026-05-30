@@ -60,11 +60,16 @@ function ShortcutsDialog({ open, onClose }: { open: boolean; onClose: () => void
 }
 
 // Share button: copy + QR popover
+// QR level L (7% error correction) max capacity: ~4296 alphanumeric chars.
+// Use 3500 as safe threshold to keep cells large enough to scan reliably.
+const QR_MAX_URL = 3500;
+
 function ShareButton() {
   const [copied, setCopied] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
   const [qrOpen, setQrOpen] = useState(false);
   const [qrDataUrl, setQrDataUrl] = useState("");
+  const [qrTooLong, setQrTooLong] = useState(false);
   const popoverRef = useRef<HTMLDivElement>(null);
 
   async function copyUrl() {
@@ -76,9 +81,19 @@ function ShareButton() {
     setCopied(true); setTimeout(() => setCopied(false), 1500);
     setLinkCopied(true); setTimeout(() => setLinkCopied(false), 2000);
     if (!qrOpen) {
-      QRCode.toDataURL(window.location.href, {
-        width: 200, margin: 1, color: { dark: "#e4e4e7", light: "#18181b" },
-      }).then(setQrDataUrl).catch(() => setQrDataUrl(""));
+      const urlLen = window.location.href.length;
+      if (urlLen > QR_MAX_URL) {
+        setQrTooLong(true);
+        setQrDataUrl("");
+      } else {
+        setQrTooLong(false);
+        QRCode.toDataURL(window.location.href, {
+          width: 240,
+          margin: 1,
+          errorCorrectionLevel: "L",  // max capacity ~4296 chars
+          color: { dark: "#e4e4e7", light: "#18181b" },
+        }).then(setQrDataUrl).catch(() => setQrDataUrl(""));
+      }
       setQrOpen(true);
     } else { setQrOpen(false); }
   }
@@ -123,10 +138,20 @@ function ShareButton() {
               }
             </button>
           </div>
-          {qrDataUrl
-            ? <img src={qrDataUrl} alt="QR code" className="w-full rounded-lg" />
-            : <div className="flex h-48 items-center justify-center text-xs text-zinc-600">Generating…</div>}
-          <p className="mt-1.5 text-center text-[9px] text-zinc-600">Scan to open on another device</p>
+          {qrTooLong ? (
+            <div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-zinc-700 bg-zinc-800/60 px-3 py-6 text-center">
+              <span className="text-2xl">📋</span>
+              <p className="text-xs font-medium text-zinc-300">Board URL too long for QR</p>
+              <p className="text-[11px] text-zinc-500 leading-relaxed">
+                Your board is very large. Use the copy button above to share the link directly.
+              </p>
+            </div>
+          ) : qrDataUrl ? (
+            <img src={qrDataUrl} alt="QR code" className="w-full rounded-lg" />
+          ) : (
+            <div className="flex h-48 items-center justify-center text-xs text-zinc-600">Generating…</div>
+          )}
+          {!qrTooLong && <p className="mt-1.5 text-center text-[9px] text-zinc-600">Scan to open on another device</p>}
         </div>
       )}
     </div>
