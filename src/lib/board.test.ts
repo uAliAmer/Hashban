@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import { compressToEncodedURIComponent } from "lz-string";
 import {
   encode,
   decode,
@@ -89,8 +90,8 @@ describe("§V.3 decode never throws, returns null on bad input", () => {
     expect(decode("")).toBeNull();
   });
   it("returns null on valid lz of non-board JSON", () => {
-    // structurally invalid -> isBoard rejects
-    const bad = encode({ foo: "bar" } as unknown as Board);
+    // manually compress invalid JSON — encode() would crash on non-Board input
+    const bad = compressToEncodedURIComponent(JSON.stringify({ foo: "bar" }));
     expect(decode(bad)).toBeNull();
   });
 });

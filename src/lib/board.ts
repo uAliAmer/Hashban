@@ -226,9 +226,67 @@ export function templateBoard(name: string): Board | null {
   }
 }
 
-// §I — encode(board) -> hash payload
+// ── Compact wire format (v2) — short keys reduce JSON size ~20% before compression ──
+
+type WireItem  = { i: string; t: string; k: boolean };
+type WireCard  = { i: string; x: string; ds?: string; c?: string; du?: string; ch?: WireItem[]; p?: string; li?: string };
+type WireCol   = { i: string; n: string; d: WireCard[]; w?: number; co?: string };
+type WireLane  = { i: string; n: string };
+type WireBoard = { v: 2; t: string; c: WireCol[]; l?: WireLane[] };
+
+function toWire(b: Board): WireBoard {
+  return {
+    v: 2,
+    t: b.t,
+    c: b.cols.map((col) => {
+      const wc: WireCol = {
+        i: col.id,
+        n: col.name,
+        d: col.cards.map((cd) => {
+          const wcard: WireCard = { i: cd.id, x: cd.txt };
+          if (cd.desc)      wcard.ds = cd.desc;
+          if (cd.color)     wcard.c  = cd.color;
+          if (cd.due)       wcard.du = cd.due;
+          if (cd.priority)  wcard.p  = cd.priority;
+          if (cd.laneId)    wcard.li = cd.laneId;
+          if (cd.checklist?.length) wcard.ch = cd.checklist.map((ci) => ({ i: ci.id, t: ci.txt, k: ci.done }));
+          return wcard;
+        }),
+      };
+      if (col.wip !== undefined) wc.w  = col.wip;
+      if (col.color)             wc.co = col.color;
+      return wc;
+    }),
+    ...(b.lanes?.length ? { l: b.lanes.map((ln) => ({ i: ln.id, n: ln.name })) } : {}),
+  };
+}
+
+function fromWire(w: WireBoard): Board {
+  return {
+    t: w.t,
+    cols: w.c.map((wc) => ({
+      id: wc.i,
+      name: wc.n,
+      ...(wc.w !== undefined ? { wip: wc.w } : {}),
+      ...(wc.co ? { color: wc.co } : {}),
+      cards: wc.d.map((wcard) => {
+        const cd: Card = { id: wcard.i, txt: wcard.x };
+        if (wcard.ds) cd.desc     = wcard.ds;
+        if (wcard.c)  cd.color    = wcard.c;
+        if (wcard.du) cd.due      = wcard.du;
+        if (wcard.p)  cd.priority = wcard.p as Card["priority"];
+        if (wcard.li) cd.laneId   = wcard.li;
+        if (wcard.ch) cd.checklist = wcard.ch.map((ci) => ({ id: ci.i, txt: ci.t, done: ci.k }));
+        return cd;
+      }),
+    })),
+    ...(w.l?.length ? { lanes: w.l.map((ln) => ({ id: ln.i, name: ln.n })) } : {}),
+  };
+}
+
+// §I — encode(board) -> hash payload (v2 compact wire format)
 export function encode(board: Board): string {
-  return compressToEncodedURIComponent(JSON.stringify(board));
+  return compressToEncodedURIComponent(JSON.stringify(toWire(board)));
 }
 
 // §I — decode(payload) -> Board | null  (§V.3: null on any failure, never throw)
@@ -238,8 +296,11 @@ export function decode(payload: string): Board | null {
     const json = decompressFromEncodedURIComponent(payload);
     if (!json) return null;
     const parsed = JSON.parse(json);
-    if (!isBoard(parsed)) return null;
-    return parsed;
+    if (!parsed || typeof parsed !== "object" || parsed.v !== 2) return null;
+    const w = parsed as WireBoard;
+    if (!w.t || !Array.isArray(w.c)) return null;
+    const board = fromWire(w);
+    return isBoard(board) ? board : null;
   } catch {
     return null;
   }
