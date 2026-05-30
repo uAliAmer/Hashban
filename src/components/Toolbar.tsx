@@ -1,9 +1,9 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import QRCode from "qrcode";
 import {
   AlignJustify,
   Download,
   Layers,
-  QrCode,
   Redo2,
   Search,
   Share2,
@@ -12,12 +12,87 @@ import {
   Upload,
   X,
 } from "lucide-react";
-import { QRDialog } from "@/components/QRDialog";
 import { BoardSidebar } from "@/components/BoardSidebar";
 import { Board, defaultBoard, isBoard, SOFT_LIMIT } from "@/lib/board";
 import { addLane, renameBoard } from "@/lib/ops";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+
+// §T25/§V.19 — Share button: copies URL on click + shows inline QR popover.
+function ShareButton() {
+  const [copied, setCopied] = useState(false);
+  const [qrOpen, setQrOpen] = useState(false);
+  const [qrDataUrl, setQrDataUrl] = useState("");
+  const popoverRef = useRef<HTMLDivElement>(null);
+
+  async function handleShare() {
+    // copy to clipboard
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+    } catch {
+      window.prompt("Copy this URL:", window.location.href);
+    }
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+
+    // generate QR and open popover
+    if (!qrOpen) {
+      QRCode.toDataURL(window.location.href, {
+        width: 200, margin: 1,
+        color: { dark: "#e4e4e7", light: "#18181b" },
+      }).then(setQrDataUrl).catch(() => setQrDataUrl(""));
+      setQrOpen(true);
+    } else {
+      setQrOpen(false);
+    }
+  }
+
+  // close on click outside
+  useEffect(() => {
+    if (!qrOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (popoverRef.current && !popoverRef.current.contains(e.target as Node))
+        setQrOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [qrOpen]);
+
+  return (
+    <div ref={popoverRef} className="relative">
+      <Button onClick={handleShare} size="sm">
+        <Share2 size={15} /> {copied ? "Copied!" : "Share"}
+      </Button>
+
+      {qrOpen && (
+        <div className="absolute right-0 top-full z-50 mt-2 w-56 rounded-xl border border-zinc-700 bg-zinc-900 p-3 shadow-2xl">
+          <div className="mb-2 flex items-center justify-between">
+            <span className="text-xs font-medium text-zinc-300">Scan to share</span>
+            <button
+              onClick={() => setQrOpen(false)}
+              className="rounded p-0.5 text-zinc-500 hover:text-zinc-200"
+              aria-label="Close"
+            >
+              <X size={13} />
+            </button>
+          </div>
+          {qrDataUrl ? (
+            <img src={qrDataUrl} alt="QR code" className="w-full rounded-lg" />
+          ) : (
+            <div className="flex h-48 items-center justify-center text-xs text-zinc-600">
+              Generating…
+            </div>
+          )}
+          <p className="mt-2 break-all text-center text-[9px] text-zinc-600">
+            {window.location.href.length > 60
+              ? window.location.href.slice(0, 60) + "…"
+              : window.location.href}
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export function Toolbar({
   board,
@@ -46,23 +121,9 @@ export function Toolbar({
   compact: boolean;
   setCompact: (v: boolean) => void;
 }) {
-  const [copied, setCopied] = useState(false);
-  const [qrOpen, setQrOpen] = useState(false);
   // compact and setCompact come from props (§V.22 ephemeral)
   const fileRef = useRef<HTMLInputElement>(null);
   const [editingTitle, setEditingTitle] = useState(false);
-
-  // §T9 — copy share URL = location.href (hash holds full state)
-  async function copyShare() {
-    try {
-      await navigator.clipboard.writeText(window.location.href);
-    } catch {
-      // fallback: select-less prompt
-      window.prompt("Copy this URL:", window.location.href);
-    }
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
-  }
 
   // §T11 — export current board as JSON file
   function exportJson() {
@@ -220,20 +281,9 @@ export function Toolbar({
         >
           <Trash size={16} />
         </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => setQrOpen(true)}
-          aria-label="Show QR code"
-          title="QR code"
-        >
-          <QrCode size={16} />
-        </Button>
-        <Button onClick={copyShare} size="sm">
-          <Share2 size={15} /> {copied ? "Copied!" : "Share"}
-        </Button>
+        {/* Share button: copies URL on click + shows QR popover */}
+        <ShareButton />
       </div>
-      <QRDialog open={qrOpen} onClose={() => setQrOpen(false)} />
     </header>
   );
 }
