@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useBoard } from "@/hooks/useBoard";
 import { Board } from "@/components/Board";
+import { SwimBoard } from "@/components/SwimBoard";
 import { Toolbar } from "@/components/Toolbar";
 
 export default function App() {
@@ -42,8 +43,13 @@ export default function App() {
         query={query}
         setQuery={setQuery}
       />
-      <main className="min-h-0 flex-1">
-        <Board board={api.board} setBoard={api.setBoard} query={query} />
+      <main className="min-h-0 flex-1 overflow-auto">
+        {/* §V.17 — swimlane grid when board.lanes present; normal column view otherwise */}
+        {api.board.lanes && api.board.lanes.length > 0 ? (
+          <SwimBoard board={api.board} setBoard={api.setBoard} query={query} />
+        ) : (
+          <Board board={api.board} setBoard={api.setBoard} query={query} />
+        )}
       </main>
     </div>
   );

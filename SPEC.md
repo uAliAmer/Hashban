@@ -17,9 +17,11 @@ Single-page Kanban. Whole board state lives in URL hash. ⊥ backend. Share URL 
 
 ## §I — interfaces
 ```
-type Card  = { id: string; txt: string; desc?: string; color?: string; due?: string }
-type Col   = { id: string; name: string; cards: Card[]; wip?: number }
-type Board = { t: string; cols: Col[] }
+type CheckItem = { id: string; txt: string; done: boolean }
+type Card  = { id: string; txt: string; desc?: string; color?: string; due?: string; checklist?: CheckItem[]; priority?: 'P1'|'P2'|'P3'; laneId?: string }
+type Lane  = { id: string; name: string }
+type Col   = { id: string; name: string; cards: Card[]; wip?: number; color?: string }
+type Board = { t: string; cols: Col[]; lanes?: Lane[] }
 
 hash:  #<lz-string compressToEncodedURIComponent(JSON.stringify(Board))>
 
@@ -27,10 +29,12 @@ encode(board: Board): string                 // lz compress -> hash payload
 decode(payload: string): Board | null        // null on parse/decompress fail
 useBoard(): { board, dispatch }              // hook: state from hash, actions
 commit(board: Board): void                   // write hash + localStorage cache
+templateBoard(name: 'sprint'|'gtd'|'hiring'): Board  // preset boards
 ```
 - event: `window 'hashchange'` → decode → re-render (cross-tab, back-button).
 - ui: "Copy share URL" → clipboard = `location.href`.
 - ui: import/export JSON; undo/redo; clear board. shadcn components.
+- ui: QR dialog → `qrcode.toDataURL(location.href)` client-side, ⊥ fetch.
 
 ## §V — invariants
 - V1: hash = single source of truth. ∀ state change → `commit()` writes hash.
@@ -46,6 +50,12 @@ commit(board: Board): void                   // write hash + localStorage cache
 - V11: search/filter = ephemeral UI state. ⊥ in board, ⊥ in hash, ⊥ persisted.
 - V12: col `wip?` set & cards.length > wip → over-limit signal. ⊥ block add (soft limit).
 - V13: roundtrip ! survive optional `wip` (V2 holds w/ & w/o field).
+- V14: card `checklist?` items ! have unique ids within card. roundtrip preserves all items & done state.
+- V15: col `color?` string | absent. roundtrip preserves.
+- V16: card `priority?` ∈ {P1,P2,P3} | absent. roundtrip preserves.
+- V17: `board.lanes?` optional. absent → single implicit lane. card `laneId?` absent → implicit lane. roundtrip preserves.
+- V18: `?template=<name>` param & ⊥ hash → seed template board, remove param. existing hash → ignore param (V10 extended).
+- V19: QR gen client-side via `qrcode` lib. ⊥ external fetch (V6 extended).
 
 ## §T — tasks
 ```
@@ -69,6 +79,12 @@ T16|x|column WIP limits (`wip?` field)|V12,V13
 T17|x|keyboard nav: arrows focus, Enter edit, Del delete, n new|G
 T18|x|mobile touch-drag (dnd-kit TouchSensor + delay)|V5
 T19|x|Cloudflare Pages prep (build cfg + headers)|C,G
+T20|x|card checklists (checklist items, progress on card face, edit in dialog)|V14,V2
+T21|x|column colors (color tint on header, swatch picker)|V15,V2
+T22|x|card priority P1/P2/P3 (badge on card, set in dialog)|V16,V2
+T23|x|swimlanes (Lane type, grid layout when lanes set, CRUD + reorder)|V17,V5
+T24|x|board templates (?template= param → preset board seed)|V18,V10
+T25|x|QR code (client-side QR dialog from Share button)|V19,V6
 ```
 
 ## §B — bugs

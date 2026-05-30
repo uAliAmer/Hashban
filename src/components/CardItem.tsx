@@ -4,6 +4,12 @@ import { GripVertical, Pencil, Trash2 } from "lucide-react";
 import { Card } from "@/lib/board";
 import { cn } from "@/lib/utils";
 
+const PRIORITY_STYLE: Record<string, string> = {
+  P1: "bg-red-700/80 text-red-100",
+  P2: "bg-orange-700/80 text-orange-100",
+  P3: "bg-yellow-700/80 text-yellow-100",
+};
+
 export function CardItem({
   card,
   colId,
@@ -40,6 +46,9 @@ export function CardItem({
   const overdue =
     card.due && new Date(card.due) < new Date(new Date().toDateString());
 
+  const checkTotal = card.checklist?.length ?? 0;
+  const checkDone = card.checklist?.filter((i) => i.done).length ?? 0;
+
   return (
     <div
       ref={setNodeRef}
@@ -69,13 +78,41 @@ export function CardItem({
         <GripVertical size={14} />
       </button>
 
-      <div className="whitespace-pre-wrap break-words pr-10">{card.txt}</div>
+      <div className="flex items-start justify-between gap-1 pr-10">
+        <div className="whitespace-pre-wrap break-words">{card.txt}</div>
+        {card.priority && (
+          <span
+            className={cn(
+              "shrink-0 rounded px-1 py-0.5 text-[10px] font-semibold",
+              PRIORITY_STYLE[card.priority]
+            )}
+          >
+            {card.priority}
+          </span>
+        )}
+      </div>
 
       {card.desc && (
         <div className="mt-1 line-clamp-2 text-xs text-zinc-400">
           {card.desc}
         </div>
       )}
+
+      {/* §V.14 — checklist progress */}
+      {checkTotal > 0 && (
+        <div className="mt-1.5 flex items-center gap-1.5">
+          <div className="h-1 flex-1 overflow-hidden rounded-full bg-zinc-700">
+            <div
+              className="h-full rounded-full bg-zinc-400 transition-all"
+              style={{ width: `${(checkDone / checkTotal) * 100}%` }}
+            />
+          </div>
+          <span className="text-[10px] tabular-nums text-zinc-500">
+            {checkDone}/{checkTotal}
+          </span>
+        </div>
+      )}
+
       {card.due && (
         <div
           className={cn(

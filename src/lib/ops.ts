@@ -1,4 +1,4 @@
-import { Board, Card, Col, genId } from "./board";
+import { Board, Card, CheckItem, Col, Lane, genId } from "./board";
 
 // Pure board transforms. Each returns a NEW board (immutable) so callers
 // pass result straight to setBoard -> commit (§V.1 §V.5).
@@ -94,6 +94,92 @@ export function moveColumn(b: Board, fromIdx: number, toIdx: number): Board {
   return { ...b, cols };
 }
 
+// §V.15 — set or clear column color
+export function setColumnColor(b: Board, colId: string, color?: string): Board {
+  return mapCol(b, colId, (c) => {
+    const next = { ...c };
+    if (color) next.color = color;
+    else delete next.color;
+    return next;
+  });
+}
+
+// §V.14 — checklist ops (all pure, return new Board)
+export function addCheckItem(b: Board, colId: string, cardId: string, txt: string): Board {
+  const item: CheckItem = { id: genId(), txt, done: false };
+  return mapCard(b, colId, cardId, (cd) => ({
+    ...cd,
+    checklist: [...(cd.checklist ?? []), item],
+  }));
+}
+
+export function toggleCheckItem(b: Board, colId: string, cardId: string, itemId: string): Board {
+  return mapCard(b, colId, cardId, (cd) => ({
+    ...cd,
+    checklist: cd.checklist?.map((i) =>
+      i.id === itemId ? { ...i, done: !i.done } : i
+    ),
+  }));
+}
+
+export function deleteCheckItem(b: Board, colId: string, cardId: string, itemId: string): Board {
+  return mapCard(b, colId, cardId, (cd) => ({
+    ...cd,
+    checklist: cd.checklist?.filter((i) => i.id !== itemId),
+  }));
+}
+
+export function updateCheckItemTxt(b: Board, colId: string, cardId: string, itemId: string, txt: string): Board {
+  return mapCard(b, colId, cardId, (cd) => ({
+    ...cd,
+    checklist: cd.checklist?.map((i) =>
+      i.id === itemId ? { ...i, txt } : i
+    ),
+  }));
+}
+
+// §V.17 — swimlane ops
+export function addLane(b: Board, name: string): Board {
+  const lane: Lane = { id: genId(), name };
+  return { ...b, lanes: [...(b.lanes ?? []), lane] };
+}
+
+export function renameLane(b: Board, laneId: string, name: string): Board {
+  return { ...b, lanes: b.lanes?.map((l) => l.id === laneId ? { ...l, name } : l) };
+}
+
+export function deleteLane(b: Board, laneId: string): Board {
+  const cols = b.cols.map((c) => ({
+    ...c,
+    cards: c.cards.map((cd) => cd.laneId === laneId ? { ...cd, laneId: undefined } : cd),
+  }));
+  return { ...b, cols, lanes: b.lanes?.filter((l) => l.id !== laneId) };
+}
+
+export function moveLane(b: Board, fromIdx: number, toIdx: number): Board {
+  const lanes = [...(b.lanes ?? [])];
+  const [l] = lanes.splice(fromIdx, 1);
+  if (!l) return b;
+  lanes.splice(toIdx, 0, l);
+  return { ...b, lanes };
+}
+
+export function setCardLane(b: Board, colId: string, cardId: string, laneId: string | undefined): Board {
+  return mapCard(b, colId, cardId, (cd) => {
+    const next = { ...cd };
+    if (laneId) next.laneId = laneId;
+    else delete next.laneId;
+    return next;
+  });
+}
+
 function mapCol(b: Board, colId: string, fn: (c: Col) => Col): Board {
   return { ...b, cols: b.cols.map((c) => (c.id === colId ? fn(c) : c)) };
+}
+
+function mapCard(b: Board, colId: string, cardId: string, fn: (cd: Card) => Card): Board {
+  return mapCol(b, colId, (c) => ({
+    ...c,
+    cards: c.cards.map((cd) => cd.id === cardId ? fn(cd) : cd),
+  }));
 }

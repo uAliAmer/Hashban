@@ -1,15 +1,26 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
   SortableContext,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { useDroppable } from "@dnd-kit/core";
-import { Plus, Trash2 } from "lucide-react";
+import { Palette, Plus, Trash2 } from "lucide-react";
 import { Col, Card } from "@/lib/board";
 import { CardItem } from "./CardItem";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+
+const COL_SWATCHES = [
+  "",
+  "#ef4444",
+  "#f97316",
+  "#eab308",
+  "#22c55e",
+  "#3b82f6",
+  "#a855f7",
+  "#ec4899",
+];
 
 export function Column({
   col,
@@ -22,6 +33,7 @@ export function Column({
   onDeleteCard,
   onRename,
   onSetWip,
+  onSetColor,
   onFocusCard,
   onDelete,
 }: {
@@ -36,12 +48,15 @@ export function Column({
   onRename: (name: string) => void;
   onSetWip: (wip?: number) => void;
   onFocusCard: (id: string) => void;
+  onSetColor: (color?: string) => void;
   onDelete: () => void;
 }) {
   const [adding, setAdding] = useState(false);
   const [draft, setDraft] = useState("");
   const [editingName, setEditingName] = useState(false);
   const [editingWip, setEditingWip] = useState(false);
+  const [showColorPicker, setShowColorPicker] = useState(false);
+  const colorPickerRef = useRef<HTMLDivElement>(null);
 
   // empty-column drop target so cards can land in empty columns. §V.5
   const { setNodeRef } = useDroppable({
@@ -60,8 +75,15 @@ export function Column({
   }
 
   return (
-    <div className="flex w-72 shrink-0 flex-col rounded-lg bg-[var(--color-col-bg)] p-2">
-      <div className="mb-2 flex items-center gap-1">
+    <div className="relative flex w-72 shrink-0 flex-col rounded-lg bg-[var(--color-col-bg)] p-2">
+      {/* §V.15 — color tint bar at top of column header */}
+      {col.color && (
+        <div
+          className="absolute left-0 top-0 h-1 w-full rounded-t-lg"
+          style={{ background: col.color }}
+        />
+      )}
+      <div className="mb-2 flex items-center gap-1" style={{ marginTop: col.color ? "4px" : undefined }}>
         {editingName ? (
           <Input
             autoFocus
@@ -121,6 +143,36 @@ export function Column({
           </button>
         )}
 
+        {/* §V.15 — column color picker */}
+        <div className="relative">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setShowColorPicker((v) => !v)}
+            aria-label="Column color"
+            title="Column color"
+          >
+            <Palette size={14} style={{ color: col.color || undefined }} />
+          </Button>
+          {showColorPicker && (
+            <div
+              ref={colorPickerRef}
+              className="absolute right-0 top-full z-20 mt-1 flex gap-1 rounded-md border border-zinc-700 bg-zinc-900 p-1.5 shadow-lg"
+            >
+              {COL_SWATCHES.map((c) => (
+                <button
+                  key={c || "none"}
+                  onClick={() => { onSetColor(c || undefined); setShowColorPicker(false); }}
+                  className={`h-5 w-5 rounded-full border-2 ${col.color === c ? "border-white" : "border-transparent"}`}
+                  style={{ background: c || "transparent" }}
+                  aria-label={c ? `color ${c}` : "no color"}
+                >
+                  {!c && <span className="text-[10px] text-zinc-500">∅</span>}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
         <Button
           variant="ghost"
           size="icon"

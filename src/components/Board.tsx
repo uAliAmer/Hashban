@@ -19,6 +19,7 @@ import {
   deleteColumn,
   moveCard,
   renameColumn,
+  setColumnColor,
   setColumnWip,
   updateCard,
 } from "@/lib/ops";
@@ -246,6 +247,7 @@ export function Board({
             }
             onRename={(name) => setBoard((b) => renameColumn(b, col.id, name))}
             onSetWip={(wip) => setBoard((b) => setColumnWip(b, col.id, wip))}
+            onSetColor={(color) => setBoard((b) => setColumnColor(b, col.id, color))}
             onFocusCard={setFocusedId}
             onDelete={() => {
               if (

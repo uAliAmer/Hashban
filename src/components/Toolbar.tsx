@@ -1,6 +1,8 @@
 import { useRef, useState } from "react";
 import {
   Download,
+  Layers,
+  QrCode,
   Redo2,
   Search,
   Share2,
@@ -9,8 +11,9 @@ import {
   Upload,
   X,
 } from "lucide-react";
+import { QRDialog } from "@/components/QRDialog";
 import { Board, defaultBoard, isBoard, SOFT_LIMIT } from "@/lib/board";
-import { renameBoard } from "@/lib/ops";
+import { addLane, renameBoard } from "@/lib/ops";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -38,6 +41,7 @@ export function Toolbar({
   setQuery: (q: string) => void;
 }) {
   const [copied, setCopied] = useState(false);
+  const [qrOpen, setQrOpen] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const [editingTitle, setEditingTitle] = useState(false);
 
@@ -135,6 +139,23 @@ export function Toolbar({
       </div>
 
       <div className="ml-auto flex items-center gap-1">
+        {/* §V.17 — swimlane toggle: add first lane to enter grid mode, or clear all lanes to exit */}
+        <Button
+          variant="ghost"
+          size="icon"
+          title={board.lanes?.length ? "Exit swimlane mode" : "Enter swimlane mode"}
+          aria-label={board.lanes?.length ? "Exit swimlane mode" : "Swimlanes"}
+          onClick={() => {
+            if (board.lanes?.length) {
+              setBoard((b) => ({ ...b, lanes: [] }));
+            } else {
+              setBoard((b) => addLane(b, "Lane 1"));
+            }
+          }}
+          className={board.lanes?.length ? "text-blue-400" : ""}
+        >
+          <Layers size={16} />
+        </Button>
         {overLimit && (
           <span
             className="mr-1 rounded bg-amber-900/60 px-2 py-1 text-xs text-amber-200"
@@ -178,10 +199,20 @@ export function Toolbar({
         >
           <Trash size={16} />
         </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setQrOpen(true)}
+          aria-label="Show QR code"
+          title="QR code"
+        >
+          <QrCode size={16} />
+        </Button>
         <Button onClick={copyShare} size="sm">
           <Share2 size={15} /> {copied ? "Copied!" : "Share"}
         </Button>
       </div>
+      <QRDialog open={qrOpen} onClose={() => setQrOpen(false)} />
     </header>
   );
 }

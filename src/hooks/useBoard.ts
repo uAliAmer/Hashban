@@ -6,6 +6,7 @@ import {
   demoBoard,
   encode,
   SOFT_LIMIT,
+  templateBoard,
 } from "@/lib/board";
 
 const LS_KEY = "hashban:last";
@@ -13,6 +14,28 @@ const MAX_HISTORY = 50;
 
 function readHash(): string {
   return window.location.hash.replace(/^#/, "");
+}
+
+// §V.18 — check ?template= param; if present + no hash, seed template and remove param.
+function checkTemplateParam(): Board | null {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const name = params.get("template");
+    if (!name || readHash()) return null; // existing hash wins (§V.18)
+    const board = templateBoard(name);
+    if (!board) return null;
+    // remove the param so sharing the URL doesn't re-seed
+    params.delete("template");
+    const newSearch = params.toString();
+    window.history.replaceState(
+      null,
+      "",
+      window.location.pathname + (newSearch ? `?${newSearch}` : "") + window.location.hash
+    );
+    return board;
+  } catch {
+    return null;
+  }
 }
 
 // §V.1+V.3+V.8 — resolve initial board: hash > localStorage cache > default.
@@ -23,6 +46,10 @@ function loadInitial(): Board {
   // §V.3 — invalid hash present: do NOT silently destroy it. Fall through to
   // cache/default for display only; next edit re-commits and replaces it.
   if (!readHash()) {
+    // §V.18 — ?template= param takes priority over cache/demo
+    const fromTemplate = checkTemplateParam();
+    if (fromTemplate) return fromTemplate;
+
     try {
       const cached = window.localStorage.getItem(LS_KEY); // §C cache only
       if (cached) {

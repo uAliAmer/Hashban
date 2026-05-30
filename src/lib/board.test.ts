@@ -125,3 +125,70 @@ describe("isBoard guard", () => {
     expect(isBoard({ t: "x" })).toBe(false);
   });
 });
+
+describe("§V.14 checklist roundtrip", () => {
+  it("roundtrips card with checklist items", () => {
+    const b: Board = {
+      t: "x",
+      cols: [{
+        id: "c1", name: "Todo", cards: [{
+          id: "k1", txt: "task",
+          checklist: [
+            { id: "i1", txt: "sub a", done: false },
+            { id: "i2", txt: "sub b", done: true },
+          ],
+        }],
+      }],
+    };
+    expect(decode(encode(b))).toEqual(b);
+  });
+  it("isBoard rejects invalid checklist item (missing done)", () => {
+    const bad = {
+      t: "x", cols: [{ id: "c", name: "n", cards: [{
+        id: "k", txt: "t", checklist: [{ id: "i", txt: "x" }],
+      }] }],
+    };
+    expect(isBoard(bad)).toBe(false);
+  });
+});
+
+describe("§V.16 priority roundtrip", () => {
+  it("roundtrips card with each priority", () => {
+    const priorities = ["P1", "P2", "P3"] as const;
+    for (const p of priorities) {
+      const b: Board = {
+        t: "x",
+        cols: [{ id: "c1", name: "Todo", cards: [{ id: "k1", txt: "t", priority: p }] }],
+      };
+      expect(decode(encode(b))).toEqual(b);
+    }
+  });
+  it("isBoard rejects invalid priority value", () => {
+    const bad = { t: "x", cols: [{ id: "c", name: "n", cards: [{ id: "k", txt: "t", priority: "P4" }] }] };
+    expect(isBoard(bad)).toBe(false);
+  });
+});
+
+describe("§V.15 column color roundtrip", () => {
+  it("roundtrips column with color", () => {
+    const b: Board = {
+      t: "x",
+      cols: [{ id: "c1", name: "Todo", color: "#3b82f6", cards: [] }],
+    };
+    expect(decode(encode(b))).toEqual(b);
+  });
+});
+
+describe("§V.17 swimlanes roundtrip", () => {
+  it("roundtrips board with lanes and card laneId", () => {
+    const b: Board = {
+      t: "x",
+      cols: [{ id: "c1", name: "Todo", cards: [{ id: "k1", txt: "t", laneId: "l1" }] }],
+      lanes: [{ id: "l1", name: "Team A" }, { id: "l2", name: "Team B" }],
+    };
+    expect(decode(encode(b))).toEqual(b);
+  });
+  it("isBoard accepts board without lanes (backward compat)", () => {
+    expect(isBoard({ t: "x", cols: [{ id: "c", name: "n", cards: [] }] })).toBe(true);
+  });
+});
