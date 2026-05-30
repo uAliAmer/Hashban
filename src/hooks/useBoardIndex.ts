@@ -42,22 +42,16 @@ export function useBoardIndex() {
   const saveBoard = useCallback((board: Board) => {
     const hash = encode(board);
     setIndex((prev) => {
-      // find entry by board title match or create new
-      const existing = prev.find((e) => e.name === board.t);
-      let next: BoardEntry[];
-      if (existing) {
-        next = prev.map((e) =>
-          e.id === existing.id ? { ...e, hash, updatedAt: new Date().toISOString() } : e
-        );
-      } else {
-        const entry: BoardEntry = {
-          id: genId(),
-          name: board.t,
-          hash,
-          updatedAt: new Date().toISOString(),
-        };
-        next = [entry, ...prev];
+      const names = new Set(prev.map((e) => e.name));
+      // find unique name: "My Board" → "My Board 2" → "My Board 3" …
+      let name = board.t;
+      if (names.has(name)) {
+        let n = 2;
+        while (names.has(`${board.t} ${n}`)) n++;
+        name = `${board.t} ${n}`;
       }
+      const entry: BoardEntry = { id: genId(), name, hash, updatedAt: new Date().toISOString() };
+      const next = [entry, ...prev];
       writeIndex(next);
       return next;
     });

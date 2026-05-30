@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { BookMarked, Save, Trash2, X, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { BookMarked, Save, Trash2, X, CheckCircle2 } from "lucide-react";
 import { Board, decode, encode } from "@/lib/board";
 import { useBoardIndex, BoardEntry } from "@/hooks/useBoardIndex";
 import { Button } from "@/components/ui/button";
@@ -60,7 +60,7 @@ function BoardPreview({ entry, isCurrent }: { entry: BoardEntry; isCurrent: bool
 export function BoardSidebar({ board }: { board: Board }) {
   const { index, saveBoard, deleteBoard, switchBoard } = useBoardIndex();
   const [open, setOpen] = useState(false);
-  const [saveStatus, setSaveStatus] = useState<"idle" | "confirm" | "saved" | "uptodate">("idle");
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saved" | "uptodate">("idle");
 
   const currentHash = typeof window !== "undefined"
     ? window.location.hash.replace(/^#/, "")
@@ -71,23 +71,15 @@ export function BoardSidebar({ board }: { board: Board }) {
     return entry.hash === currentHash || entry.hash === encodedCurrent;
   }
 
-  const existingByName = index.find((e) => e.name === board.t);
-  const existingIsUpToDate = !!existingByName && isCurrent(existingByName);
+  // already saved if any entry has this exact hash
+  const alreadySaved = index.some(isCurrent);
 
   function handleSaveClick() {
-    if (existingIsUpToDate) {
+    if (alreadySaved) {
       setSaveStatus("uptodate");
       setTimeout(() => setSaveStatus("idle"), 2000);
       return;
     }
-    if (existingByName) {
-      setSaveStatus("confirm");
-      return;
-    }
-    doSave();
-  }
-
-  function doSave() {
     saveBoard(board);
     setSaveStatus("saved");
     setTimeout(() => setSaveStatus("idle"), 1500);
@@ -160,33 +152,6 @@ export function BoardSidebar({ board }: { board: Board }) {
             <span className="font-medium text-zinc-300">{board.t}</span>
           </p>
 
-          {/* same-name conflict warning */}
-          {saveStatus === "confirm" && (
-            <div className="mb-2 rounded-md border border-amber-700/60 bg-amber-950/40 p-2.5">
-              <div className="mb-1.5 flex items-start gap-1.5 text-xs text-amber-300">
-                <AlertTriangle size={13} className="mt-0.5 shrink-0" />
-                <span>
-                  A saved board named <strong>"{board.t}"</strong> already exists.
-                  Overwrite it with the current state?
-                </span>
-              </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={doSave}
-                  className="rounded bg-amber-700 px-2.5 py-1 text-[11px] font-medium text-white hover:bg-amber-600"
-                >
-                  Overwrite
-                </button>
-                <button
-                  onClick={() => setSaveStatus("idle")}
-                  className="rounded px-2.5 py-1 text-[11px] text-zinc-400 hover:text-zinc-200"
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          )}
-
           {saveStatus === "saved" && (
             <div className="mb-2 flex items-center gap-1.5 text-xs text-green-400">
               <CheckCircle2 size={13} /> Saved!
@@ -199,15 +164,13 @@ export function BoardSidebar({ board }: { board: Board }) {
             </div>
           )}
 
-          {saveStatus !== "confirm" && (
-            <button
+          <button
               onClick={handleSaveClick}
               className="flex w-full items-center justify-center gap-1.5 rounded-md border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-200 transition-colors hover:bg-zinc-700 hover:text-white"
             >
               <Save size={14} />
               Save current board
             </button>
-          )}
         </div>
 
         {/* board list */}
