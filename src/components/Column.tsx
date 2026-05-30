@@ -6,7 +6,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { useDroppable } from "@dnd-kit/core";
-import { ChevronLeft, GripVertical, Palette, Plus, Trash2 } from "lucide-react";
+import { ChevronLeft, Palette, Plus, Trash2 } from "lucide-react";
 import { Col, Card } from "@/lib/board";
 import { CardItem } from "./CardItem";
 import { Button } from "@/components/ui/button";
@@ -135,21 +135,18 @@ export function Column({
         <div className="absolute left-0 top-0 h-1 w-full rounded-t-lg" style={{ background: col.color }} />
       )}
 
-      <div className="mb-2 flex items-center gap-1" style={{ marginTop: col.color ? "4px" : undefined }}>
-        {/* §V.20 — column drag handle */}
-        <button
-          className="cursor-grab text-zinc-600 hover:text-zinc-400 active:cursor-grabbing"
-          {...attributes}
-          {...listeners}
-          aria-label="Drag column"
-        >
-          <GripVertical size={14} />
-        </button>
-
+      {/* §V.20 — drag from anywhere on header; activationConstraint distance:5 means clicks still fire */}
+      <div
+        className="mb-2 flex cursor-grab items-center gap-1 active:cursor-grabbing"
+        style={{ marginTop: col.color ? "4px" : undefined }}
+        {...attributes}
+        {...listeners}
+      >
         {editingName ? (
           <Input
             autoFocus
             defaultValue={col.name}
+            onPointerDown={(e) => e.stopPropagation()}
             onBlur={(e) => { onRename(e.target.value.trim() || col.name); setEditingName(false); }}
             onKeyDown={(e) => {
               if (e.key === "Enter") e.currentTarget.blur();
@@ -160,6 +157,7 @@ export function Column({
         ) : (
           <button
             onClick={() => setEditingName(true)}
+            onPointerDown={(e) => e.stopPropagation()}
             className="flex-1 truncate text-left text-sm font-semibold text-zinc-200"
             title="Click to rename"
           >
@@ -175,6 +173,7 @@ export function Column({
             min={0}
             defaultValue={col.wip ?? ""}
             placeholder="∞"
+            onPointerDown={(e) => e.stopPropagation()}
             onBlur={(e) => {
               const v = e.target.value.trim();
               onSetWip(v === "" ? undefined : Number(v));
@@ -189,6 +188,7 @@ export function Column({
         ) : (
           <button
             onClick={() => setEditingWip(true)}
+            onPointerDown={(e) => e.stopPropagation()}
             title="Set WIP limit"
             className={cn(
               "rounded px-1.5 py-0.5 text-xs tabular-nums",
@@ -199,8 +199,8 @@ export function Column({
           </button>
         )}
 
-        {/* Color picker */}
-        <div className="relative">
+        {/* Color picker — stop pointer so header drag doesn't fire */}
+        <div className="relative" onPointerDown={(e) => e.stopPropagation()}>
           <Button variant="ghost" size="icon" onClick={() => setShowColorPicker((v) => !v)} aria-label="Column color" title="Column color">
             <Palette size={14} style={{ color: col.color || undefined }} />
           </Button>
@@ -225,11 +225,11 @@ export function Column({
         </div>
 
         {/* §V.23 — collapse button */}
-        <Button variant="ghost" size="icon" onClick={onToggleCollapse} aria-label="Collapse column" title="Collapse column">
+        <Button variant="ghost" size="icon" onClick={onToggleCollapse} onPointerDown={(e) => e.stopPropagation()} aria-label="Collapse column" title="Collapse column">
           <ChevronLeft size={14} />
         </Button>
 
-        <Button variant="ghost" size="icon" onClick={onDelete} aria-label="Delete column">
+        <Button variant="ghost" size="icon" onClick={onDelete} onPointerDown={(e) => e.stopPropagation()} aria-label="Delete column">
           <Trash2 size={14} />
         </Button>
       </div>

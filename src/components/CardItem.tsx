@@ -1,6 +1,6 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { GripVertical, Pencil, Trash2 } from "lucide-react";
+import { Pencil, Trash2 } from "lucide-react";
 import { Card } from "@/lib/board";
 import { cn } from "@/lib/utils";
 
@@ -51,17 +51,18 @@ export function CardItem({
   const checkTotal = card.checklist?.length ?? 0;
   const checkDone = card.checklist?.filter((i) => i.done).length ?? 0;
 
-  // §V.22 — compact: title-only single-line row
+  // §V.22 — compact: title-only single-line row; drag from anywhere on row
   if (compact) {
     return (
       <div
         ref={setNodeRef}
         style={style}
         data-card-id={card.id}
-        tabIndex={0}
         onFocus={onFocus}
+        {...attributes}
+        {...listeners}
         className={cn(
-          "group relative flex items-center gap-1.5 rounded border bg-[var(--color-card-bg)] px-2 py-1 text-xs focus:outline-none",
+          "group relative flex cursor-grab items-center gap-1.5 rounded border bg-[var(--color-card-bg)] px-2 py-1 text-xs focus:outline-none active:cursor-grabbing",
           focused ? "border-zinc-400 ring-1 ring-zinc-400" : "border-zinc-700"
         )}
       >
@@ -83,10 +84,10 @@ export function CardItem({
           </span>
         )}
         <div className="absolute right-1 flex gap-0.5 opacity-0 group-hover:opacity-100">
-          <button onClick={onEdit} className="rounded p-0.5 text-zinc-500 hover:text-zinc-200" aria-label="Edit card">
+          <button onClick={(e) => { e.stopPropagation(); onEdit(); }} className="rounded p-0.5 text-zinc-500 hover:text-zinc-200" aria-label="Edit card">
             <Pencil size={11} />
           </button>
-          <button onClick={onDelete} className="rounded p-0.5 text-zinc-500 hover:text-red-300" aria-label="Delete card">
+          <button onClick={(e) => { e.stopPropagation(); onDelete(); }} className="rounded p-0.5 text-zinc-500 hover:text-red-300" aria-label="Delete card">
             <Trash2 size={11} />
           </button>
         </div>
@@ -99,13 +100,12 @@ export function CardItem({
       ref={setNodeRef}
       style={style}
       data-card-id={card.id}
-      tabIndex={0}
       onFocus={onFocus}
+      {...attributes}
+      {...listeners}
       className={cn(
-        "group relative rounded-md border bg-[var(--color-card-bg)] p-2 pl-6 text-sm shadow-sm focus:outline-none",
-        focused
-          ? "border-zinc-400 ring-2 ring-zinc-400"
-          : "border-zinc-700"
+        "group relative cursor-grab rounded-md border bg-[var(--color-card-bg)] p-2 text-sm shadow-sm focus:outline-none active:cursor-grabbing",
+        focused ? "border-zinc-400 ring-2 ring-zinc-400" : "border-zinc-700"
       )}
     >
       {card.color && (
@@ -114,73 +114,56 @@ export function CardItem({
           style={{ background: card.color }}
         />
       )}
-      <button
-        className="absolute left-1 top-1.5 cursor-grab text-zinc-500 opacity-0 group-hover:opacity-100"
-        {...attributes}
-        {...listeners}
-        aria-label="Drag card"
-      >
-        <GripVertical size={14} />
-      </button>
 
-      <div className="flex items-start justify-between gap-1 pr-10">
+      <div className="flex items-start justify-between gap-1 pr-10 pl-1">
         <div className="whitespace-pre-wrap break-words">{card.txt}</div>
         {card.priority && (
-          <span
-            className={cn(
-              "shrink-0 rounded px-1 py-0.5 text-[10px] font-semibold",
-              PRIORITY_STYLE[card.priority]
-            )}
-          >
+          <span className={cn("shrink-0 rounded px-1 py-0.5 text-[10px] font-semibold", PRIORITY_STYLE[card.priority])}>
             {card.priority}
           </span>
         )}
       </div>
 
       {card.desc && (
-        <div className="mt-1 line-clamp-2 text-xs text-zinc-400">
+        <div className="mt-1 line-clamp-2 pl-1 text-xs text-zinc-400">
           {card.desc}
         </div>
       )}
 
       {/* §V.14 — checklist progress */}
       {checkTotal > 0 && (
-        <div className="mt-1.5 flex items-center gap-1.5">
+        <div className="mt-1.5 flex items-center gap-1.5 pl-1">
           <div className="h-1 flex-1 overflow-hidden rounded-full bg-zinc-700">
             <div
               className="h-full rounded-full bg-zinc-400 transition-all"
               style={{ width: `${(checkDone / checkTotal) * 100}%` }}
             />
           </div>
-          <span className="text-[10px] tabular-nums text-zinc-500">
-            {checkDone}/{checkTotal}
-          </span>
+          <span className="text-[10px] tabular-nums text-zinc-500">{checkDone}/{checkTotal}</span>
         </div>
       )}
 
       {card.due && (
-        <div
-          className={cn(
-            "mt-1 inline-block rounded px-1.5 py-0.5 text-[10px]",
-            overdue
-              ? "bg-red-900/60 text-red-200"
-              : "bg-zinc-700 text-zinc-300"
-          )}
-        >
+        <div className={cn("mt-1 ml-1 inline-block rounded px-1.5 py-0.5 text-[10px]",
+          overdue ? "bg-red-900/60 text-red-200" : "bg-zinc-700 text-zinc-300"
+        )}>
           {card.due}
         </div>
       )}
 
+      {/* action buttons — stopPropagation so they don't bubble drag events */}
       <div className="absolute right-1 top-1 flex gap-0.5 opacity-0 group-hover:opacity-100">
         <button
-          onClick={onEdit}
+          onClick={(e) => { e.stopPropagation(); onEdit(); }}
+          onPointerDown={(e) => e.stopPropagation()}
           className="rounded p-1 text-zinc-400 hover:bg-zinc-700 hover:text-zinc-100"
           aria-label="Edit card"
         >
           <Pencil size={13} />
         </button>
         <button
-          onClick={onDelete}
+          onClick={(e) => { e.stopPropagation(); onDelete(); }}
+          onPointerDown={(e) => e.stopPropagation()}
           className="rounded p-1 text-zinc-400 hover:bg-zinc-700 hover:text-red-300"
           aria-label="Delete card"
         >
