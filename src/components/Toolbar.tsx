@@ -64,16 +64,48 @@ function ShortcutsDialog({ open, onClose }: { open: boolean; onClose: () => void
 // Use 3500 as safe threshold to keep cells large enough to scan reliably.
 const QR_MAX_URL = 3500;
 
+// Worker URL — update after deploying hashban-short
+const SHORTENER_URL = "https://hashban-short.ualiamer7.workers.dev";
+
 function ShareButton() {
   const [copied, setCopied] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
   const [qrOpen, setQrOpen] = useState(false);
   const [qrDataUrl, setQrDataUrl] = useState("");
   const [qrTooLong, setQrTooLong] = useState(false);
+  const [shortUrl, setShortUrl] = useState("");
+  const [shortening, setShortening] = useState(false);
+  const [shortCopied, setShortCopied] = useState(false);
   const popoverRef = useRef<HTMLDivElement>(null);
 
-  async function copyUrl() {
-    try { await navigator.clipboard.writeText(window.location.href); } catch { /* noop */ }
+  async function copyUrl(url?: string) {
+    try { await navigator.clipboard.writeText(url ?? window.location.href); } catch { /* noop */ }
+  }
+
+  async function handleShorten() {
+    setShortening(true);
+    try {
+      // encode # as %23 so the fragment survives HTTP redirect
+      const encodedUrl = window.location.href.replace(/#/, "%23");
+      const res = await fetch(`${SHORTENER_URL}/shorten`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: encodedUrl }),
+      });
+      if (!res.ok) throw new Error("shorten failed");
+      const data = await res.json() as { short: string };
+      setShortUrl(data.short);
+    } catch {
+      setShortUrl("");
+    } finally {
+      setShortening(false);
+    }
+  }
+
+  async function copyShort() {
+    await copyUrl(shortUrl);
+    setShortCopied(true);
+    setTimeout(() => setShortCopied(false), 1500);
   }
 
   async function handleShare() {
@@ -99,7 +131,7 @@ function ShareButton() {
   }
 
   async function handleInlineCopy() {
-    await copyUrl();
+    await copyUrl(undefined);
     setLinkCopied(true); setTimeout(() => setLinkCopied(false), 2000);
   }
 
@@ -127,7 +159,8 @@ function ShareButton() {
               <X size={13} />
             </button>
           </div>
-          <div className={`mb-3 flex items-center gap-1.5 overflow-hidden rounded-lg border px-2 py-1.5 transition-all duration-300 ${linkCopied ? "border-green-500/60 bg-green-950/40" : "border-zinc-700 bg-zinc-800"}`}>
+          {/* full URL row */}
+          <div className={`mb-2 flex items-center gap-1.5 overflow-hidden rounded-lg border px-2 py-1.5 transition-all duration-300 ${linkCopied ? "border-green-500/60 bg-green-950/40" : "border-zinc-700 bg-zinc-800"}`}>
             <span className={`flex-1 truncate text-[11px] transition-colors duration-300 ${linkCopied ? "text-green-300" : "text-zinc-400"}`}>
               {url.length > 36 ? url.slice(0, 36) + "…" : url}
             </span>
@@ -138,6 +171,29 @@ function ShareButton() {
               }
             </button>
           </div>
+
+          {/* short URL row */}
+          {shortUrl ? (
+            <div className={`mb-2 flex items-center gap-1.5 overflow-hidden rounded-lg border px-2 py-1.5 transition-all duration-300 ${shortCopied ? "border-green-500/60 bg-green-950/40" : "border-blue-700/50 bg-blue-950/30"}`}>
+              <span className={`flex-1 truncate text-[11px] font-medium transition-colors ${shortCopied ? "text-green-300" : "text-blue-300"}`}>
+                {shortUrl}
+              </span>
+              <button onClick={copyShort} className={`shrink-0 rounded p-1 transition-all duration-200 ${shortCopied ? "text-green-400 scale-110" : "text-blue-400 hover:text-blue-200"}`} aria-label="Copy short link">
+                {shortCopied
+                  ? <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                  : <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></svg>
+                }
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={handleShorten}
+              disabled={shortening}
+              className="mb-2 flex w-full items-center justify-center gap-1.5 rounded-lg border border-zinc-700 bg-zinc-800 px-2 py-1.5 text-[11px] text-zinc-400 transition-colors hover:border-zinc-500 hover:text-zinc-200 disabled:opacity-50"
+            >
+              {shortening ? "Shortening…" : "✂ Shorten URL"}
+            </button>
+          )}
           {qrTooLong ? (
             <div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-zinc-700 bg-zinc-800/60 px-3 py-6 text-center">
               <span className="text-2xl">📋</span>
