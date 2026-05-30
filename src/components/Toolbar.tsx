@@ -60,9 +60,9 @@ function ShortcutsDialog({ open, onClose }: { open: boolean; onClose: () => void
 }
 
 // Share button: copy + QR popover
-// QR level L (7% error correction) max capacity: ~4296 alphanumeric chars.
-// Use 3500 as safe threshold to keep cells large enough to scan reliably.
-const QR_MAX_URL = 3500;
+// QR byte-mode at level L maxes ~2953 bytes. Board URLs use mixed-case
+// base64url (byte mode, not alphanumeric), so 2900 is the safe ceiling.
+const QR_MAX_URL = 2900;
 
 // Worker URL — update after deploying hashban-short
 const SHORTENER_URL = "https://hashban-short.ali-demo.workers.dev";
@@ -95,6 +95,11 @@ function ShareButton() {
       if (!res.ok) throw new Error("shorten failed");
       const data = await res.json() as { short: string };
       setShortUrl(data.short);
+      // short URL is tiny — (re)generate the QR from it so it's always scannable
+      QRCode.toDataURL(data.short, {
+        width: 240, margin: 1, errorCorrectionLevel: "M",
+        color: { dark: "#e4e4e7", light: "#18181b" },
+      }).then((u) => { setQrDataUrl(u); setQrTooLong(false); }).catch(() => {});
     } catch {
       setShortUrl("");
     } finally {
@@ -119,12 +124,16 @@ function ShareButton() {
         setQrDataUrl("");
       } else {
         setQrTooLong(false);
+        setQrDataUrl("");
         QRCode.toDataURL(window.location.href, {
           width: 240,
           margin: 1,
-          errorCorrectionLevel: "L",  // max capacity ~4296 chars
+          errorCorrectionLevel: "L",
           color: { dark: "#e4e4e7", light: "#18181b" },
-        }).then(setQrDataUrl).catch(() => setQrDataUrl(""));
+        })
+          .then(setQrDataUrl)
+          // generation can still fail if byte-mode capacity exceeded — show fallback
+          .catch(() => setQrTooLong(true));
       }
       setQrOpen(true);
     } else { setQrOpen(false); }
@@ -196,10 +205,10 @@ function ShareButton() {
           )}
           {qrTooLong ? (
             <div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-zinc-700 bg-zinc-800/60 px-3 py-6 text-center">
-              <span className="text-2xl">📋</span>
+              <span className="text-2xl">✂</span>
               <p className="text-xs font-medium text-zinc-300">Board URL too long for QR</p>
               <p className="text-[11px] text-zinc-500 leading-relaxed">
-                Your board is very large. Use the copy button above to share the link directly.
+                Tap <span className="text-blue-400">Shorten URL</span> above — the short link generates a scannable QR.
               </p>
             </div>
           ) : qrDataUrl ? (
