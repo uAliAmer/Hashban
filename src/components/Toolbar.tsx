@@ -85,12 +85,12 @@ function ShareButton() {
   async function handleShorten() {
     setShortening(true);
     try {
-      // encode # as %23 so the fragment survives HTTP redirect
-      const encodedUrl = window.location.href.replace(/#/, "%23");
+      // send raw URL — # is fine in a JSON body; worker serves a JS redirect
+      // that preserves the fragment reliably
       const res = await fetch(`${SHORTENER_URL}/shorten`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: encodedUrl }),
+        body: JSON.stringify({ url: window.location.href }),
       });
       if (!res.ok) throw new Error("shorten failed");
       const data = await res.json() as { short: string };
