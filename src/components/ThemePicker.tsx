@@ -46,7 +46,7 @@ export function ThemePicker() {
 
       {open && (
         <div className="absolute right-0 top-full z-50 mt-2 w-52 rounded-xl border border-zinc-700 bg-zinc-900 p-3 shadow-2xl">
-          <p className="mb-2.5 text-[11px] font-medium uppercase tracking-wider text-zinc-500">
+          <p className="mb-2.5 text-[11px] font-medium uppercase tracking-wider text-zinc-400">
             Background
           </p>
 
@@ -62,12 +62,12 @@ export function ThemePicker() {
                 <span
                   className={`block h-12 w-full rounded-lg border-2 transition-all ${
                     activeId === theme.id
-                      ? "border-white scale-95 shadow-lg shadow-white/10"
-                      : "border-zinc-700 hover:border-zinc-400 hover:scale-95"
+                      ? "border-white shadow-lg shadow-white/20 scale-95"
+                      : "border-zinc-500 hover:border-zinc-300 hover:scale-95"
                   }`}
                   style={{ background: theme.preview }}
                 />
-                <span className={`text-[10px] ${activeId === theme.id ? "text-zinc-200" : "text-zinc-600 group-hover:text-zinc-400"}`}>
+                <span className={`text-[10px] font-medium ${activeId === theme.id ? "text-white" : "text-zinc-400 group-hover:text-zinc-200"}`}>
                   {theme.label}
                 </span>
               </button>
