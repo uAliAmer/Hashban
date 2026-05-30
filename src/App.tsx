@@ -1,15 +1,25 @@
 import { useEffect, useState } from "react";
 import { useBoard } from "@/hooks/useBoard";
+import { useBoardIndex } from "@/hooks/useBoardIndex";
 import { Board } from "@/components/Board";
 import { SwimBoard } from "@/components/SwimBoard";
 import { Toolbar } from "@/components/Toolbar";
 
 export default function App() {
   const api = useBoard();
+  const { autoSave } = useBoardIndex();
   // §V.11 — ephemeral UI state: never in hash/storage
   const [query, setQuery] = useState("");
   // §V.22 — compact view
   const [compact, setCompact] = useState(false);
+
+  // auto-save to sidebar: debounce 1.5s after each change.
+  // guard: canUndo ensures we only save after a real user edit, not on initial load.
+  useEffect(() => {
+    if (!api.canUndo) return;
+    const timer = setTimeout(() => { autoSave(api.board); }, 1500);
+    return () => clearTimeout(timer);
+  }, [api.board, api.canUndo, autoSave]);
 
   // keyboard: Ctrl/Cmd+Z undo, Ctrl/Cmd+Shift+Z (or Ctrl+Y) redo (§T12)
   useEffect(() => {

@@ -61,6 +61,25 @@ export function useBoardIndex() {
     window.location.hash = entry.hash;
   }, []);
 
+  // auto-save: upsert by board title (update existing entry, or create if new name).
+  // unlike manual saveBoard, never increments name — always overwrites matching entry.
+  const autoSave = useCallback(async (board: Board) => {
+    const hash = encode(board);
+    const current = await getAllBoards().catch(() => [] as BoardEntry[]);
+    const existing = current.find((e) => e.name === board.t);
+
+    if (existing) {
+      if (existing.hash === hash) return; // nothing changed
+      const updated = { ...existing, hash, updatedAt: new Date().toISOString() };
+      await putBoard(updated).catch(() => {});
+      setIndex((prev) => prev.map((e) => (e.id === existing.id ? updated : e)));
+    } else {
+      const entry: BoardEntry = { id: genId(), name: board.t, hash, updatedAt: new Date().toISOString() };
+      await putBoard(entry).catch(() => {});
+      setIndex((prev) => [entry, ...prev]);
+    }
+  }, []);
+
   const renameEntry = useCallback(async (id: string, name: string) => {
     setIndex((prev) => {
       const updated = prev.map((e) => e.id === id ? { ...e, name } : e);
@@ -70,5 +89,5 @@ export function useBoardIndex() {
     });
   }, []);
 
-  return { index, loading, saveBoard, deleteBoard, switchBoard, renameEntry };
+  return { index, loading, saveBoard, autoSave, deleteBoard, switchBoard, renameEntry };
 }
