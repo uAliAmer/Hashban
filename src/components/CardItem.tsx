@@ -116,7 +116,7 @@ export function CardItem({
       )}
 
       <div className="flex items-start justify-between gap-1 pr-10 pl-1">
-        <div className="whitespace-pre-wrap break-words" dir="auto">{card.txt}</div>
+        <div className="flex-1 whitespace-pre-wrap break-words" dir="auto">{card.txt}</div>
         {card.priority && (
           <span className={cn("shrink-0 rounded px-1 py-0.5 text-[10px] font-semibold", PRIORITY_STYLE[card.priority])}>
             {card.priority}
