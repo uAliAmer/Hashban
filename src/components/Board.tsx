@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useConfirm } from "@/components/ui/app-dialogs";
 import {
   DndContext,
   DragEndEvent,
@@ -58,6 +59,7 @@ export function Board({
     useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
     useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 8 } })
   );
+  const confirm = useConfirm();
   const [activeCard, setActiveCard] = useState<Card | null>(null);
   const [activeCol, setActiveCol] = useState<Col | null>(null);
   const [editing, setEditing] = useState<{ colId: string; card: Card } | null>(null);
@@ -293,10 +295,10 @@ export function Board({
               onSetWip={(wip) => setBoard((b) => setColumnWip(b, col.id, wip))}
               onSetColor={(color) => setBoard((b) => setColumnColor(b, col.id, color))}
               onFocusCard={setFocusedId}
-              onDelete={() => {
+              onDelete={async () => {
                 if (
                   col.cards.length === 0 ||
-                  window.confirm(`Delete column "${col.name}" and its cards?`)
+                  await confirm(`Delete column "${col.name}" and all its cards?`, { danger: true })
                 ) {
                   setBoard((b) => deleteColumn(b, col.id));
                 }

@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { useConfirm } from "@/components/ui/app-dialogs";
 import {
   DndContext,
   DragEndEvent,
@@ -206,6 +207,7 @@ export function SwimBoard({
     useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
     useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 8 } })
   );
+  const confirm = useConfirm();
   const [activeCard, setActiveCard] = useState<Card | null>(null);
   const [editing, setEditing] = useState<{ colId: string; card: Card } | null>(null);
   const [focusedId, setFocusedId] = useState<string | null>(null);
@@ -324,8 +326,8 @@ export function SwimBoard({
                 onAddCard={(colId) => handleAddCardInLane(colId, lane.id)}
                 onDeleteCard={(colId, cardId) => setBoard((b) => deleteCard(b, colId, cardId))}
                 onRename={(name) => setBoard((b) => renameLane(b, lane.id, name))}
-                onDelete={() => {
-                  if (window.confirm(`Delete lane "${lane.name}"? Cards move to first lane.`))
+                onDelete={async () => {
+                  if (await confirm(`Delete lane "${lane.name}"? Cards in it move to the first lane.`, { danger: true }))
                     setBoard((b) => deleteLane(b, lane.id));
                 }}
               />

@@ -4,6 +4,7 @@ import { useBoardIndex } from "@/hooks/useBoardIndex";
 import { Board } from "@/components/Board";
 import { SwimBoard } from "@/components/SwimBoard";
 import { Toolbar } from "@/components/Toolbar";
+import { AppDialogProvider } from "@/components/ui/app-dialogs";
 
 export default function App() {
   const api = useBoard();
@@ -42,6 +43,7 @@ export default function App() {
   }, [api]);
 
   return (
+    <AppDialogProvider>
     <div className="flex h-full flex-col">
       <Toolbar
         board={api.board}
@@ -66,5 +68,6 @@ export default function App() {
         )}
       </main>
     </div>
+    </AppDialogProvider>
   );
 }

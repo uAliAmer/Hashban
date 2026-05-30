@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { BookMarked, Save, Trash2, X, CheckCircle2 } from "lucide-react";
+import { useConfirm } from "@/components/ui/app-dialogs";
 import { Board, decode, encode } from "@/lib/board";
 import { useBoardIndex, BoardEntry } from "@/hooks/useBoardIndex";
 import { Button } from "@/components/ui/button";
@@ -59,6 +60,7 @@ function BoardPreview({ entry, isCurrent }: { entry: BoardEntry; isCurrent: bool
 
 export function BoardSidebar({ board }: { board: Board }) {
   const { index, loading, saveBoard, deleteBoard, switchBoard } = useBoardIndex();
+  const confirm = useConfirm();
   const [open, setOpen] = useState(false);
   const [saveStatus, setSaveStatus] = useState<"idle" | "saved" | "uptodate">("idle");
 
@@ -206,8 +208,8 @@ export function BoardSidebar({ board }: { board: Board }) {
                     <BoardPreview entry={entry} isCurrent={isCurrent(entry)} />
                   </button>
                   <button
-                    onClick={() => {
-                      if (window.confirm(`Remove "${entry.name}" from saved boards?`))
+                    onClick={async () => {
+                      if (await confirm(`Remove "${entry.name}" from saved boards?`, { danger: true }))
                         deleteBoard(entry.id);
                     }}
                     className="absolute right-2 top-2 rounded p-1 text-zinc-700 opacity-0 hover:text-red-400 group-hover:opacity-100"

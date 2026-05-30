@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { BoardSidebar } from "@/components/BoardSidebar";
 import { ThemePicker } from "@/components/ThemePicker";
+import { useAlert, useConfirm } from "@/components/ui/app-dialogs";
 import { Board, defaultBoard, isBoard, SOFT_LIMIT } from "@/lib/board";
 import { addLane, renameBoard } from "@/lib/ops";
 import { Button } from "@/components/ui/button";
@@ -31,7 +32,7 @@ function ShareButton() {
     try {
       await navigator.clipboard.writeText(window.location.href);
     } catch {
-      window.prompt("Copy this URL:", window.location.href);
+      /* clipboard unavailable — silently no-op on HTTPS deployments */
     }
   }
 
@@ -172,7 +173,8 @@ export function Toolbar({
   compact: boolean;
   setCompact: (v: boolean) => void;
 }) {
-  // compact and setCompact come from props (§V.22 ephemeral)
+  const confirm = useConfirm();
+  const alert = useAlert();
   const fileRef = useRef<HTMLInputElement>(null);
   const [editingTitle, setEditingTitle] = useState(false);
 
@@ -194,13 +196,13 @@ export function Toolbar({
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = () => {
+    reader.onload = async () => {
       try {
         const parsed = JSON.parse(String(reader.result));
         if (isBoard(parsed)) setBoard(parsed);
-        else window.alert("Invalid board file.");
+        else await alert("Invalid board file — structure doesn't match a Hashban board.");
       } catch {
-        window.alert("Could not parse JSON.");
+        await alert("Could not parse JSON. Make sure the file is a valid .json export.");
       }
     };
     reader.readAsText(file);
@@ -326,8 +328,8 @@ export function Toolbar({
           size="icon"
           aria-label="Clear board"
           title="Clear board"
-          onClick={() => {
-            if (window.confirm("Reset to a fresh empty board?"))
+          onClick={async () => {
+            if (await confirm("Reset to a fresh empty board? This cannot be undone."))
               setBoard(defaultBoard());
           }}
         >
