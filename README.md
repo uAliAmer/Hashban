@@ -1,4 +1,4 @@
-# Hashban — Kanban that lives in your URL
+# Hashban — Kanban Board that lives in your URL
 
 **Live demo → [hashban.pages.dev](https://hashban.pages.dev)**
 
