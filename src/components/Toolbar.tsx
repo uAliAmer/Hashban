@@ -13,7 +13,7 @@ import {
   X,
 } from "lucide-react";
 import { QRDialog } from "@/components/QRDialog";
-import { BoardSwitcher } from "@/components/BoardSwitcher";
+import { BoardSidebar } from "@/components/BoardSidebar";
 import { Board, defaultBoard, isBoard, SOFT_LIMIT } from "@/lib/board";
 import { addLane, renameBoard } from "@/lib/ops";
 import { Button } from "@/components/ui/button";
@@ -122,8 +122,8 @@ export function Toolbar({
         </button>
       )}
 
-      {/* §V.21 — board switcher: save/load from localStorage index */}
-      <BoardSwitcher board={board} />
+      {/* §V.21 — board sidebar: save/load from localStorage index */}
+      <BoardSidebar board={board} />
 
       {/* §V.11 — ephemeral search/filter, never persisted */}
       <div className="relative ml-2 hidden sm:block">
