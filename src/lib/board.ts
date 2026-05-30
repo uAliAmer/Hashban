@@ -74,34 +74,33 @@ export function demoBoard(): Board {
     return t.toISOString().slice(0, 10);
   };
   return {
-    t: "Hashban Demo",
+    t: "✨ Hashban Demo",
     cols: [
       {
         id: genId(),
-        name: "Backlog",
+        name: "📥 Backlog",
         color: "#6b7280",
         cards: [
           {
             id: genId(),
-            txt: "Drag this card to another column",
-            desc: "Click and hold anywhere on the card to drag it.",
+            txt: "Click me to edit this card",
+            desc: "Single click opens edit — set title, description, priority, color, due date, and checklist.",
             color: "#3b82f6",
-            priority: "P2",
-          },
-          {
-            id: genId(),
-            txt: "Click a card to edit",
-            desc: "Set title, description, priority, color, due date, and checklist items.",
-            color: "#a855f7",
             priority: "P3",
           },
           {
             id: genId(),
-            txt: "Launch a feature",
+            txt: "Drag me to another column",
+            desc: "Click and hold, then drag anywhere on the card body.",
+            color: "#a855f7",
+          },
+          {
+            id: genId(),
+            txt: "🚀 Ship the feature",
             checklist: [
               { id: genId(), txt: "Write spec", done: true },
-              { id: genId(), txt: "Build it", done: true },
-              { id: genId(), txt: "Ship to prod", done: false },
+              { id: genId(), txt: "Build & test", done: true },
+              { id: genId(), txt: "Deploy to prod", done: false },
             ],
             color: "#f59e0b",
             priority: "P1",
@@ -109,25 +108,25 @@ export function demoBoard(): Board {
           },
           {
             id: genId(),
-            txt: "Try the search bar — type to filter cards across all columns",
+            txt: "Use ↑↓←→ keys to navigate, n to add a card",
           },
         ],
       },
       {
         id: genId(),
-        name: "In Progress",
+        name: "⚡ In Progress",
         color: "#f59e0b",
         wip: 2,
         cards: [
           {
             id: genId(),
-            txt: "This column has a WIP limit of 2 — badge turns red when exceeded",
+            txt: "WIP limit is 2 — badge turns red when exceeded",
             color: "#f59e0b",
             due: iso(1),
           },
           {
             id: genId(),
-            txt: "Overdue card example",
+            txt: "Overdue card",
             color: "#ef4444",
             priority: "P1",
             due: iso(-2),
@@ -136,7 +135,7 @@ export function demoBoard(): Board {
       },
       {
         id: genId(),
-        name: "Done",
+        name: "✅ Done",
         color: "#10b981",
         cards: [
           {
@@ -147,12 +146,13 @@ export function demoBoard(): Board {
           },
           {
             id: genId(),
-            txt: "Save boards to the sidebar (🔖) — auto-saves every edit",
+            txt: "Boards sidebar → auto-saves every edit to your browser",
             color: "#3b82f6",
           },
           {
             id: genId(),
-            txt: "Use arrow keys to navigate cards, Enter to edit, n to add a new card",
+            txt: "Pick a background theme via the 🎨 icon in the toolbar",
+            color: "#a855f7",
           },
         ],
       },

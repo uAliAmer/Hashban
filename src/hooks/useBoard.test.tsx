@@ -51,7 +51,7 @@ describe("§V.10 first-visit demo seed", () => {
     window.location.hash = "";
     window.localStorage?.clear();
     const { result } = renderHook(() => useBoard());
-    expect(result.current.board.t).toBe("Hashban Demo");
+    expect(result.current.board.t).toBe("✨ Hashban Demo");
     expect(result.current.board.cols.length).toBeGreaterThan(0);
   });
 });

@@ -221,9 +221,10 @@ export function Toolbar({
   return (
     <header className="grid grid-cols-[auto_1fr_auto] items-center gap-3 border-b border-zinc-800 px-4 py-2">
 
-      {/* LEFT — logo + title + sidebar */}
+      {/* LEFT — sidebar trigger + logo + title */}
       <div className="flex items-center gap-1.5">
-        <span className="font-mono text-sm font-bold text-zinc-400">#</span>
+        <BoardSidebar board={board} />
+        <span className="ml-1 font-mono text-xs font-bold text-zinc-600">#</span>
         {editingTitle ? (
           <Input
             autoFocus defaultValue={board.t} dir="auto"
@@ -233,13 +234,12 @@ export function Toolbar({
           />
         ) : (
           <button onClick={() => setEditingTitle(true)} dir="auto"
-            className="max-w-[180px] truncate text-sm font-semibold text-zinc-100 hover:text-white hover:underline"
+            className="max-w-[160px] truncate text-sm font-semibold text-zinc-100 hover:text-white hover:underline"
             title="Rename board"
           >
             {board.t}
           </button>
         )}
-        <BoardSidebar board={board} />
       </div>
 
       {/* CENTER — search bar, always visible, full width */}
