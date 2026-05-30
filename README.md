@@ -1,5 +1,9 @@
 # Hashban
 
+**Live demo → [hashban.pages.dev](https://hashban.pages.dev)**
+
+![Hashban screenshot](hashban.png)
+
 A single-page Kanban board whose **entire state lives in the URL hash**. No
 backend, no database, no accounts, no network calls at runtime. **Share the URL
 = share the board.**
