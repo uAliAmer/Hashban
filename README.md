@@ -1,64 +1,70 @@
-# Hashban
+# Hashban — Kanban that lives in your URL
 
 **Live demo → [hashban.pages.dev](https://hashban.pages.dev)**
 
 ![Hashban screenshot](hashban.png)
 
-A single-page Kanban board whose **entire state lives in the URL hash**. No
-backend, no database, no accounts, no network calls at runtime. **Share the URL
-= share the board.**
-
-Open the page, build your board, hit **Share** — the link you copy *is* the
-board. Anyone who opens it sees exactly what you see.
+A zero-backend Kanban board encoded entirely in the URL hash. No server, no database, no accounts. **Share the URL = share the board** — the link *is* the data.
 
 ## How it works
 
-The whole board (title, columns, cards, colors, due dates) is serialized to
-JSON, compressed with [`lz-string`](https://github.com/pieroxy/lz-string), and
-stored in `location.hash`:
+Every edit serializes the board to JSON, compresses it with [`lz-string`](https://github.com/pieroxy/lz-string), and writes it to `location.hash`:
 
 ```
-https://you.example/#N4Ig…compressed-state…
+https://hashban.pages.dev/#N4Ig…compressed-state…
 ```
 
-The hash is the single source of truth. Every edit re-encodes the board into
-the URL. `localStorage` is used only as an offline cache for reopening the bare
-page — it is never authoritative.
-
-Because nothing leaves the browser, there is no server to run, nothing to host
-beyond a static file, and no privacy backend: your board lives only in your URL
-bar and wherever you paste it.
+The hash is the single source of truth. `localStorage` is used only as an offline autosave cache — never authoritative. Nothing ever leaves the browser.
 
 ## Features
 
-- **Demo on first visit** — a pre-loaded sample board greets new users; returning
-  users and shared-link recipients always see their own board.
-- Columns + cards, full CRUD (add / edit / delete / rename).
-- **Drag-and-drop** cards within and across columns; reorder freely. Works on
-  mobile (touch + press-delay to disambiguate from scrolling).
-- **Card metadata** — label color, due date (overdue highlight), description.
-- **Column WIP limits** — click the card count badge to set a limit; the badge
-  turns red when exceeded (soft limit, never blocks adding).
-- **Search / filter** — type in the toolbar to instantly dim non-matching cards
-  across all columns; filter is ephemeral and never saved to the URL.
-- **Keyboard navigation** — arrows move focus between cards, `Enter` edits,
-  `Delete`/`Backspace` removes, `n` adds a new card to the focused column.
-- Editable board title and column names.
-- **Share** button copies the live URL to your clipboard.
-- Import / Export the board as a JSON file.
-- Undo / Redo (`Ctrl/Cmd+Z`, `Ctrl/Cmd+Shift+Z` or `Ctrl+Y`).
-- Long-URL warning when the encoded state nears browser length limits (~8 000 chars).
-- Cross-tab / back-button sync via `hashchange`.
+**Board**
+- Editable board title and unlimited columns
+- Drag cards anywhere on the card to move/reorder; drag column headers to reorder columns
+- **Swimlanes** — horizontal row groupings across all columns (toggle via Layers icon)
+- **Board templates** — open `?template=sprint`, `?template=gtd`, or `?template=hiring` to seed a pre-built board
+- **Multiple boards** — left-sidebar index backed by IndexedDB; auto-saves 1.5s after each edit; switch boards without losing the current URL
+
+**Cards**
+- **Checklist** — subtasks with progress bar on card face
+- **Priority** — P1 / P2 / P3 badge (red / orange / yellow)
+- **Label color**, **due date** (overdue highlight), **description**
+- Full CRUD: add, edit, delete
+
+**Columns**
+- **WIP limits** — click the card count badge; badge turns red when exceeded (soft limit)
+- **Column color** — tint bar on header, 8-swatch picker
+- **Collapse** — fold to slim 40 px vertical bar; click to expand
+
+**Views & navigation**
+- **Compact view** — cards collapse to single-line title rows
+- **Search / filter** — toolbar search dims non-matching cards instantly; ephemeral, never saved to URL
+- **Keyboard nav** — arrows move focus, `Enter` edits, `Delete` removes, `n` adds a card
+
+**Sharing**
+- **Share** button — copies URL to clipboard and shows a QR code popover (client-side, no external fetch)
+- **QR code** — scan to open on another device
+- **RTL support** — Arabic and other RTL text detected automatically via `dir="auto"`
+
+**Persistence & sync**
+- **Undo / Redo** (`Ctrl/Cmd+Z` / `Ctrl/Cmd+Shift+Z`) — each step re-commits the hash
+- **Import / Export** board as JSON
+- Cross-tab and back-button sync via `hashchange`
+- Long-URL warning past ~8 000 chars
+
+**Appearance**
+- **9 background themes** — 5 solid, 4 gradient (Aurora, Ocean, Cosmos, Ember); saved to `localStorage`
+- Demo board on first visit; returning and shared-link users always see their own board
 
 ## Keyboard shortcuts
 
 | Key | Action |
-|-----|--------|
-| `↑` / `↓` | Move focus between cards in a column |
-| `←` / `→` | Jump focus to adjacent column |
-| `Enter` | Open edit dialog for focused card |
+|---|---|
+| `↑` / `↓` | Move focus between cards |
+| `←` / `→` | Jump to adjacent column |
+| `Enter` | Edit focused card |
 | `Delete` / `Backspace` | Delete focused card |
-| `n` | Add a new card to the focused column |
+| `n` | Add card to focused column |
 | `Ctrl/Cmd+Z` | Undo |
 | `Ctrl/Cmd+Shift+Z` / `Ctrl+Y` | Redo |
 
@@ -66,49 +72,34 @@ bar and wherever you paste it.
 
 ```bash
 npm install
-npm run dev      # Vite dev server  →  http://localhost:5173
-npm run test     # Vitest unit tests (30 tests)
-npm run build    # TypeScript check + Vite bundle  →  dist/
-npm run preview  # Serve the production build locally
+npm run dev      # Vite dev server → http://localhost:5173
+npm run test     # Vitest (37 tests)
+npm run build    # TypeScript check + Vite bundle → dist/
+npm run preview  # Serve production build locally
 ```
 
-Stack: React 19 + Vite 6 + TypeScript + Tailwind CSS v4, drag-and-drop via
-[`@dnd-kit`](https://dndkit.com/). UI primitives follow shadcn/ui conventions
-(`class-variance-authority` + `tailwind-merge`), hand-rolled so the app has no
-runtime fetch dependencies.
+Stack: **React 19 + Vite 6 + TypeScript + Tailwind CSS v4**, drag-and-drop via [`@dnd-kit`](https://dndkit.com/), QR via [`qrcode`](https://github.com/soldair/node-qrcode), board index via IndexedDB. UI primitives hand-rolled (shadcn/ui pattern), no runtime fetch dependencies.
 
-## Deploy to Cloudflare Pages
+## Deploy
 
-**Dashboard (recommended):**
+**Cloudflare Pages (recommended):**
 
-1. Connect the GitHub repo in the Cloudflare Pages dashboard.
-2. Build command: **`npm run build`** · Output directory: **`dist`**
-3. Done — every push to `main` deploys automatically.
+1. Connect `uAliAmer/Hashban` in the Cloudflare Pages dashboard.
+2. Build command: `npm run build` · Output directory: `dist`
+3. Every push to `main` deploys automatically.
 
-> **Note:** do not use `npm run deploy:local` as the Pages build command —
-> that script calls `wrangler pages deploy` which is only for local CLI use.
-> Cloudflare Pages handles the publish step itself; it only needs the build.
+**Anywhere else:** `npm run build` emits a static `dist/`. Drop it on GitHub Pages, Netlify, Vercel, S3, or open `dist/index.html` directly — no server required.
 
-**CLI (local, wrangler authenticated):**
+**Local CLI:**
 
 ```bash
 npm run deploy:local   # npm run build + wrangler pages deploy dist
 ```
 
-`public/_headers` ships with the build and tells Cloudflare to cache fingerprinted
-assets forever while keeping `index.html` uncached — so old shared URLs always
-load the latest shell but assets are served from edge cache instantly.
-
-## Deploy anywhere else
-
-`npm run build` emits a static `dist/`. Drop it on GitHub Pages, Netlify, Vercel,
-an S3 bucket, or open `dist/index.html` directly — there is no server component.
-
 ## Caveats
 
-- URLs have length limits (~2k–64k chars depending on browser). Very large
-  boards may exceed them when shared; the app warns past ~8 000 chars.
-- Anyone with the link has the board — treat the URL like the data it contains.
+- URLs have length limits (~2k–64k chars by browser). Very large boards may exceed them when shared; the app warns past ~8 000 chars.
+- Anyone with the URL has full read/write access to the board — treat the link like the data it contains.
 
 ## License
 
