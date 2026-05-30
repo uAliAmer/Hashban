@@ -152,7 +152,7 @@ export function demoBoard(): Board {
           },
           {
             id: genId(),
-            txt: "Try ?template=sprint or ?template=gtd in the URL for preset boards",
+            txt: "Use arrow keys to navigate cards, Enter to edit, n to add a new card",
           },
         ],
       },
