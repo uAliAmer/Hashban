@@ -60,10 +60,6 @@ function ShortcutsDialog({ open, onClose }: { open: boolean; onClose: () => void
 }
 
 // Share button: copy + QR popover
-// QR byte-mode at level L maxes ~2953 bytes. Board URLs use mixed-case
-// base64url (byte mode, not alphanumeric), so 2900 is the safe ceiling.
-const QR_MAX_URL = 2900;
-
 // Worker URL — update after deploying hashban-short
 const SHORTENER_URL = "https://hashban-short.ali-demo.workers.dev";
 
@@ -72,21 +68,33 @@ function ShareButton() {
   const [linkCopied, setLinkCopied] = useState(false);
   const [qrOpen, setQrOpen] = useState(false);
   const [qrDataUrl, setQrDataUrl] = useState("");
-  const [qrTooLong, setQrTooLong] = useState(false);
   const [shortUrl, setShortUrl] = useState("");
   const [shortening, setShortening] = useState(false);
   const [shortCopied, setShortCopied] = useState(false);
+  // href the cached shortUrl + QR were made for — lets us reuse them if the
+  // board hasn't changed, and invalidate them when it has.
+  const shortedFor = useRef("");
   const popoverRef = useRef<HTMLDivElement>(null);
 
   async function copyUrl(url?: string) {
     try { await navigator.clipboard.writeText(url ?? window.location.href); } catch { /* noop */ }
   }
 
+  // QR is ALWAYS built from the short URL (long board URLs are unscannable)
+  async function makeShortQr(short: string) {
+    try {
+      const u = await QRCode.toDataURL(short, {
+        width: 240, margin: 1, errorCorrectionLevel: "M",
+        color: { dark: "#e4e4e7", light: "#18181b" },
+      });
+      setQrDataUrl(u);
+    } catch { setQrDataUrl(""); }
+  }
+
   async function handleShorten() {
     setShortening(true);
     try {
       // send raw URL — # is fine in a JSON body; worker serves a JS redirect
-      // that preserves the fragment reliably
       const res = await fetch(`${SHORTENER_URL}/shorten`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -95,11 +103,8 @@ function ShareButton() {
       if (!res.ok) throw new Error("shorten failed");
       const data = await res.json() as { short: string };
       setShortUrl(data.short);
-      // short URL is tiny — (re)generate the QR from it so it's always scannable
-      QRCode.toDataURL(data.short, {
-        width: 240, margin: 1, errorCorrectionLevel: "M",
-        color: { dark: "#e4e4e7", light: "#18181b" },
-      }).then((u) => { setQrDataUrl(u); setQrTooLong(false); }).catch(() => {});
+      shortedFor.current = window.location.href;
+      await makeShortQr(data.short);
     } catch {
       setShortUrl("");
     } finally {
@@ -113,30 +118,24 @@ function ShareButton() {
     setTimeout(() => setShortCopied(false), 1500);
   }
 
-  async function handleShare() {
-    await copyUrl();
+  function handleShare() {
+    copyUrl();
     setCopied(true); setTimeout(() => setCopied(false), 1500);
     setLinkCopied(true); setTimeout(() => setLinkCopied(false), 2000);
     if (!qrOpen) {
-      const urlLen = window.location.href.length;
-      if (urlLen > QR_MAX_URL) {
-        setQrTooLong(true);
+      // board unchanged since last shorten → reuse cached short URL + QR.
+      // board changed (or never shortened) → drop stale short URL; QR appears
+      // only after the user shortens (QR is always from the short link).
+      if (shortedFor.current !== window.location.href) {
+        setShortUrl("");
         setQrDataUrl("");
-      } else {
-        setQrTooLong(false);
-        setQrDataUrl("");
-        QRCode.toDataURL(window.location.href, {
-          width: 240,
-          margin: 1,
-          errorCorrectionLevel: "L",
-          color: { dark: "#e4e4e7", light: "#18181b" },
-        })
-          .then(setQrDataUrl)
-          // generation can still fail if byte-mode capacity exceeded — show fallback
-          .catch(() => setQrTooLong(true));
+      } else if (shortUrl && !qrDataUrl) {
+        makeShortQr(shortUrl);
       }
       setQrOpen(true);
-    } else { setQrOpen(false); }
+    } else {
+      setQrOpen(false);
+    }
   }
 
   async function handleInlineCopy() {
@@ -203,20 +202,20 @@ function ShareButton() {
               {shortening ? "Shortening…" : "✂ Shorten URL"}
             </button>
           )}
-          {qrTooLong ? (
-            <div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-zinc-700 bg-zinc-800/60 px-3 py-6 text-center">
+          {/* QR is always built from the short link — long board URLs are unscannable */}
+          {qrDataUrl ? (
+            <>
+              <img src={qrDataUrl} alt="QR code" className="w-full rounded-lg" />
+              <p className="mt-1.5 text-center text-[9px] text-zinc-600">Scan to open on another device</p>
+            </>
+          ) : (
+            <div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-zinc-700 bg-zinc-800/40 px-3 py-6 text-center">
               <span className="text-2xl">✂</span>
-              <p className="text-xs font-medium text-zinc-300">Board URL too long for QR</p>
               <p className="text-[11px] text-zinc-500 leading-relaxed">
-                Tap <span className="text-blue-400">Shorten URL</span> above — the short link generates a scannable QR.
+                Tap <span className="text-blue-400">Shorten URL</span> to get a scannable QR code.
               </p>
             </div>
-          ) : qrDataUrl ? (
-            <img src={qrDataUrl} alt="QR code" className="w-full rounded-lg" />
-          ) : (
-            <div className="flex h-48 items-center justify-center text-xs text-zinc-600">Generating…</div>
           )}
-          {!qrTooLong && <p className="mt-1.5 text-center text-[9px] text-zinc-600">Scan to open on another device</p>}
         </div>
       )}
     </div>
