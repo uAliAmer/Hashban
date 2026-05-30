@@ -56,6 +56,10 @@ templateBoard(name: 'sprint'|'gtd'|'hiring'): Board  // preset boards
 - V17: `board.lanes?` optional. absent → single implicit lane. card `laneId?` absent → implicit lane. roundtrip preserves.
 - V18: `?template=<name>` param & ⊥ hash → seed template board, remove param. existing hash → ignore param (V10 extended).
 - V19: QR gen client-side via `qrcode` lib. ⊥ external fetch (V6 extended).
+- V20: col drag-reorder → `moveColumn` op → commit (V5 extended). ⊥ col id collision w/ card ids.
+- V21: multi-board index ∈ localStorage only. ⊥ authoritative. hash = source of truth for active board (V1 preserved).
+- V22: compact view = ephemeral display toggle. ⊥ hash, ⊥ persisted (V11 pattern).
+- V23: col collapse = ephemeral per-col toggle. ⊥ hash, ⊥ persisted.
 
 ## §T — tasks
 ```
@@ -85,6 +89,10 @@ T22|x|card priority P1/P2/P3 (badge on card, set in dialog)|V16,V2
 T23|x|swimlanes (Lane type, grid layout when lanes set, CRUD + reorder)|V17,V5
 T24|x|board templates (?template= param → preset board seed)|V18,V10
 T25|x|QR code (client-side QR dialog from Share button)|V19,V6
+T26|x|column drag-and-drop reorder (dnd-kit sortable on columns)|V20,V5
+T27|x|multiple boards (localStorage index, board switcher in toolbar)|V21,V1
+T28|x|compact view (toolbar toggle, cards collapse to title-only rows)|V22
+T29|x|column collapse (fold column to slim vertical bar, ephemeral)|V23
 ```
 
 ## §B — bugs

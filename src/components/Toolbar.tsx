@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import {
+  AlignJustify,
   Download,
   Layers,
   QrCode,
@@ -12,6 +13,7 @@ import {
   X,
 } from "lucide-react";
 import { QRDialog } from "@/components/QRDialog";
+import { BoardSwitcher } from "@/components/BoardSwitcher";
 import { Board, defaultBoard, isBoard, SOFT_LIMIT } from "@/lib/board";
 import { addLane, renameBoard } from "@/lib/ops";
 import { Button } from "@/components/ui/button";
@@ -28,6 +30,8 @@ export function Toolbar({
   overLimit,
   query,
   setQuery,
+  compact,
+  setCompact,
 }: {
   board: Board;
   setBoard: (next: Board | ((p: Board) => Board)) => void;
@@ -39,9 +43,12 @@ export function Toolbar({
   overLimit: boolean;
   query: string;
   setQuery: (q: string) => void;
+  compact: boolean;
+  setCompact: (v: boolean) => void;
 }) {
   const [copied, setCopied] = useState(false);
   const [qrOpen, setQrOpen] = useState(false);
+  // compact and setCompact come from props (§V.22 ephemeral)
   const fileRef = useRef<HTMLInputElement>(null);
   const [editingTitle, setEditingTitle] = useState(false);
 
@@ -115,6 +122,9 @@ export function Toolbar({
         </button>
       )}
 
+      {/* §V.21 — board switcher: save/load from localStorage index */}
+      <BoardSwitcher board={board} />
+
       {/* §V.11 — ephemeral search/filter, never persisted */}
       <div className="relative ml-2 hidden sm:block">
         <Search
@@ -139,7 +149,18 @@ export function Toolbar({
       </div>
 
       <div className="ml-auto flex items-center gap-1">
-        {/* §V.17 — swimlane toggle: add first lane to enter grid mode, or clear all lanes to exit */}
+        {/* §V.22 — compact view toggle */}
+        <Button
+          variant="ghost"
+          size="icon"
+          title={compact ? "Normal view" : "Compact view"}
+          aria-label={compact ? "Normal view" : "Compact view"}
+          onClick={() => setCompact(!compact)}
+          className={compact ? "text-blue-400" : ""}
+        >
+          <AlignJustify size={16} />
+        </Button>
+        {/* §V.17 — swimlane toggle */}
         <Button
           variant="ghost"
           size="icon"

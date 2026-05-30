@@ -14,6 +14,7 @@ export function CardItem({
   card,
   colId,
   focused,
+  compact,
   onEdit,
   onDelete,
   onFocus,
@@ -21,6 +22,7 @@ export function CardItem({
   card: Card;
   colId: string;
   focused?: boolean;
+  compact?: boolean;
   onEdit: () => void;
   onDelete: () => void;
   onFocus: () => void;
@@ -48,6 +50,49 @@ export function CardItem({
 
   const checkTotal = card.checklist?.length ?? 0;
   const checkDone = card.checklist?.filter((i) => i.done).length ?? 0;
+
+  // §V.22 — compact: title-only single-line row
+  if (compact) {
+    return (
+      <div
+        ref={setNodeRef}
+        style={style}
+        data-card-id={card.id}
+        tabIndex={0}
+        onFocus={onFocus}
+        className={cn(
+          "group relative flex items-center gap-1.5 rounded border bg-[var(--color-card-bg)] px-2 py-1 text-xs focus:outline-none",
+          focused ? "border-zinc-400 ring-1 ring-zinc-400" : "border-zinc-700"
+        )}
+      >
+        {card.color && (
+          <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: card.color }} />
+        )}
+        {card.priority && (
+          <span className={cn("shrink-0 rounded px-1 text-[10px] font-semibold", PRIORITY_STYLE[card.priority])}>
+            {card.priority}
+          </span>
+        )}
+        <span className="flex-1 truncate text-zinc-200">{card.txt}</span>
+        {checkTotal > 0 && (
+          <span className="shrink-0 text-[10px] tabular-nums text-zinc-500">{checkDone}/{checkTotal}</span>
+        )}
+        {card.due && (
+          <span className={cn("shrink-0 rounded px-1 text-[10px]", overdue ? "text-red-300" : "text-zinc-500")}>
+            {card.due}
+          </span>
+        )}
+        <div className="absolute right-1 flex gap-0.5 opacity-0 group-hover:opacity-100">
+          <button onClick={onEdit} className="rounded p-0.5 text-zinc-500 hover:text-zinc-200" aria-label="Edit card">
+            <Pencil size={11} />
+          </button>
+          <button onClick={onDelete} className="rounded p-0.5 text-zinc-500 hover:text-red-300" aria-label="Delete card">
+            <Trash2 size={11} />
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div

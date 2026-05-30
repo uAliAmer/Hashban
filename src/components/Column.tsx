@@ -2,9 +2,11 @@ import { useRef, useState } from "react";
 import {
   SortableContext,
   verticalListSortingStrategy,
+  useSortable,
 } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { useDroppable } from "@dnd-kit/core";
-import { Palette, Plus, Trash2 } from "lucide-react";
+import { ChevronLeft, GripVertical, Palette, Plus, Trash2 } from "lucide-react";
 import { Col, Card } from "@/lib/board";
 import { CardItem } from "./CardItem";
 import { Button } from "@/components/ui/button";
@@ -28,6 +30,9 @@ export function Column({
   filtered,
   hiddenCount,
   focusedId,
+  compact,
+  collapsed,
+  onToggleCollapse,
   onAddCard,
   onEditCard,
   onDeleteCard,
@@ -38,17 +43,20 @@ export function Column({
   onDelete,
 }: {
   col: Col;
-  cards: Card[]; // already filtered (§V.11)
+  cards: Card[];
   filtered: boolean;
   hiddenCount: number;
   focusedId: string | null;
+  compact: boolean;
+  collapsed: boolean;
+  onToggleCollapse: () => void;
   onAddCard: (txt: string) => void;
   onEditCard: (card: Card) => void;
   onDeleteCard: (cardId: string) => void;
   onRename: (name: string) => void;
   onSetWip: (wip?: number) => void;
-  onFocusCard: (id: string) => void;
   onSetColor: (color?: string) => void;
+  onFocusCard: (id: string) => void;
   onDelete: () => void;
 }) {
   const [adding, setAdding] = useState(false);
@@ -58,13 +66,31 @@ export function Column({
   const [showColorPicker, setShowColorPicker] = useState(false);
   const colorPickerRef = useRef<HTMLDivElement>(null);
 
-  // empty-column drop target so cards can land in empty columns. §V.5
-  const { setNodeRef } = useDroppable({
+  // §V.20 — column-level sortable (drag handle = grip icon)
+  const {
+    attributes,
+    listeners,
+    setNodeRef: setSortableRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({
+    id: col.id,
+    data: { type: "column", colId: col.id },
+  });
+
+  const sortableStyle = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.4 : 1,
+  };
+
+  // empty-column drop target §V.5
+  const { setNodeRef: setDropRef } = useDroppable({
     id: `col-drop-${col.id}`,
     data: { type: "col", colId: col.id },
   });
 
-  // §V.12 — over-limit when a wip is set and real card count exceeds it.
   const overLimit = col.wip !== undefined && col.cards.length > col.wip;
 
   function commitAdd() {
@@ -74,24 +100,57 @@ export function Column({
     setAdding(false);
   }
 
+  // §V.23 — collapsed: slim vertical bar
+  if (collapsed) {
+    return (
+      <div
+        ref={setSortableRef}
+        style={sortableStyle}
+        className="relative flex h-48 w-10 shrink-0 cursor-pointer select-none flex-col items-center justify-between rounded-lg bg-[var(--color-col-bg)] py-2"
+        onClick={onToggleCollapse}
+        title={`Expand "${col.name}"`}
+      >
+        {col.color && (
+          <div className="absolute left-0 top-0 h-1 w-full rounded-t-lg" style={{ background: col.color }} />
+        )}
+        <ChevronLeft size={14} className="rotate-180 text-zinc-500" />
+        <span
+          className="flex-1 truncate text-[11px] font-medium text-zinc-400"
+          style={{ writingMode: "vertical-rl", textOrientation: "mixed" }}
+        >
+          {col.name}
+        </span>
+        <span className="text-[10px] tabular-nums text-zinc-600">{col.cards.length}</span>
+      </div>
+    );
+  }
+
   return (
-    <div className="relative flex w-72 shrink-0 flex-col rounded-lg bg-[var(--color-col-bg)] p-2">
-      {/* §V.15 — color tint bar at top of column header */}
+    <div
+      ref={setSortableRef}
+      style={sortableStyle}
+      className="relative flex w-72 shrink-0 flex-col rounded-lg bg-[var(--color-col-bg)] p-2"
+    >
       {col.color && (
-        <div
-          className="absolute left-0 top-0 h-1 w-full rounded-t-lg"
-          style={{ background: col.color }}
-        />
+        <div className="absolute left-0 top-0 h-1 w-full rounded-t-lg" style={{ background: col.color }} />
       )}
+
       <div className="mb-2 flex items-center gap-1" style={{ marginTop: col.color ? "4px" : undefined }}>
+        {/* §V.20 — column drag handle */}
+        <button
+          className="cursor-grab text-zinc-600 hover:text-zinc-400 active:cursor-grabbing"
+          {...attributes}
+          {...listeners}
+          aria-label="Drag column"
+        >
+          <GripVertical size={14} />
+        </button>
+
         {editingName ? (
           <Input
             autoFocus
             defaultValue={col.name}
-            onBlur={(e) => {
-              onRename(e.target.value.trim() || col.name);
-              setEditingName(false);
-            }}
+            onBlur={(e) => { onRename(e.target.value.trim() || col.name); setEditingName(false); }}
             onKeyDown={(e) => {
               if (e.key === "Enter") e.currentTarget.blur();
               if (e.key === "Escape") setEditingName(false);
@@ -108,7 +167,7 @@ export function Column({
           </button>
         )}
 
-        {/* §V.12 — count / WIP badge; click to set limit */}
+        {/* WIP badge */}
         {editingWip ? (
           <Input
             autoFocus
@@ -133,25 +192,16 @@ export function Column({
             title="Set WIP limit"
             className={cn(
               "rounded px-1.5 py-0.5 text-xs tabular-nums",
-              overLimit
-                ? "bg-red-900/70 font-semibold text-red-200"
-                : "text-zinc-500 hover:bg-zinc-700 hover:text-zinc-300"
+              overLimit ? "bg-red-900/70 font-semibold text-red-200" : "text-zinc-500 hover:bg-zinc-700 hover:text-zinc-300"
             )}
           >
-            {col.cards.length}
-            {col.wip !== undefined ? `/${col.wip}` : ""}
+            {col.cards.length}{col.wip !== undefined ? `/${col.wip}` : ""}
           </button>
         )}
 
-        {/* §V.15 — column color picker */}
+        {/* Color picker */}
         <div className="relative">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setShowColorPicker((v) => !v)}
-            aria-label="Column color"
-            title="Column color"
-          >
+          <Button variant="ghost" size="icon" onClick={() => setShowColorPicker((v) => !v)} aria-label="Column color" title="Column color">
             <Palette size={14} style={{ color: col.color || undefined }} />
           </Button>
           {showColorPicker && (
@@ -173,30 +223,26 @@ export function Column({
             </div>
           )}
         </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={onDelete}
-          aria-label="Delete column"
-        >
+
+        {/* §V.23 — collapse button */}
+        <Button variant="ghost" size="icon" onClick={onToggleCollapse} aria-label="Collapse column" title="Collapse column">
+          <ChevronLeft size={14} />
+        </Button>
+
+        <Button variant="ghost" size="icon" onClick={onDelete} aria-label="Delete column">
           <Trash2 size={14} />
         </Button>
       </div>
 
-      <div
-        ref={setNodeRef}
-        className="flex min-h-2 flex-1 flex-col gap-2 overflow-y-auto"
-      >
-        <SortableContext
-          items={cards.map((c) => c.id)}
-          strategy={verticalListSortingStrategy}
-        >
+      <div ref={setDropRef} className="flex min-h-2 flex-1 flex-col gap-2 overflow-y-auto">
+        <SortableContext items={cards.map((c) => c.id)} strategy={verticalListSortingStrategy}>
           {cards.map((card) => (
             <CardItem
               key={card.id}
               card={card}
               colId={col.id}
               focused={card.id === focusedId}
+              compact={compact}
               onFocus={() => onFocusCard(card.id)}
               onEdit={() => onEditCard(card)}
               onDelete={() => onDeleteCard(card.id)}
@@ -204,9 +250,7 @@ export function Column({
           ))}
         </SortableContext>
         {filtered && hiddenCount > 0 && (
-          <div className="px-1 text-[11px] text-zinc-500">
-            {hiddenCount} hidden by filter
-          </div>
+          <div className="px-1 text-[11px] text-zinc-500">{hiddenCount} hidden by filter</div>
         )}
       </div>
 
@@ -217,41 +261,19 @@ export function Column({
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                commitAdd();
-              }
-              if (e.key === "Escape") {
-                setDraft("");
-                setAdding(false);
-              }
+              if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); commitAdd(); }
+              if (e.key === "Escape") { setDraft(""); setAdding(false); }
             }}
             placeholder="Card text… (Enter to add)"
             className="w-full rounded-md border border-zinc-600 bg-zinc-800 p-2 text-sm text-zinc-100 placeholder:text-zinc-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400"
           />
           <div className="mt-1 flex gap-2">
-            <Button size="sm" onClick={commitAdd}>
-              Add
-            </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => {
-                setDraft("");
-                setAdding(false);
-              }}
-            >
-              Cancel
-            </Button>
+            <Button size="sm" onClick={commitAdd}>Add</Button>
+            <Button size="sm" variant="ghost" onClick={() => { setDraft(""); setAdding(false); }}>Cancel</Button>
           </div>
         </div>
       ) : (
-        <Button
-          variant="ghost"
-          size="sm"
-          className="mt-2 justify-start"
-          onClick={() => setAdding(true)}
-        >
+        <Button variant="ghost" size="sm" className="mt-2 justify-start" onClick={() => setAdding(true)}>
           <Plus size={14} /> Add card
         </Button>
       )}

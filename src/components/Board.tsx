@@ -10,14 +10,19 @@ import {
   useSensors,
   closestCorners,
 } from "@dnd-kit/core";
+import {
+  SortableContext,
+  horizontalListSortingStrategy,
+} from "@dnd-kit/sortable";
 import { Plus } from "lucide-react";
-import { Board as BoardT, Card } from "@/lib/board";
+import { Board as BoardT, Card, Col } from "@/lib/board";
 import {
   addCard,
   addColumn,
   deleteCard,
   deleteColumn,
   moveCard,
+  moveColumn,
   renameColumn,
   setColumnColor,
   setColumnWip,
@@ -42,25 +47,33 @@ export function Board({
   board,
   setBoard,
   query,
+  compact,
 }: {
   board: BoardT;
   setBoard: (next: BoardT | ((p: BoardT) => BoardT)) => void;
   query: string;
+  compact: boolean;
 }) {
-  // §T18 — mouse drag (small distance) + touch drag (press-delay so a normal
-  // scroll/tap on mobile doesn't start a drag). §V.5
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
-    useSensor(TouchSensor, {
-      activationConstraint: { delay: 200, tolerance: 8 },
-    })
+    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 8 } })
   );
   const [activeCard, setActiveCard] = useState<Card | null>(null);
-  const [editing, setEditing] = useState<{ colId: string; card: Card } | null>(
-    null
-  );
+  const [activeCol, setActiveCol] = useState<Col | null>(null);
+  const [editing, setEditing] = useState<{ colId: string; card: Card } | null>(null);
   const [focusedId, setFocusedId] = useState<string | null>(null);
+  // §V.23 — collapsed cols: ephemeral, not in hash
+  const [collapsedCols, setCollapsedCols] = useState<Set<string>>(new Set());
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  function toggleCollapse(colId: string) {
+    setCollapsedCols((prev) => {
+      const next = new Set(prev);
+      if (next.has(colId)) next.delete(colId);
+      else next.add(colId);
+      return next;
+    });
+  }
 
   function locate(cardId: string) {
     for (const c of board.cols) {
@@ -70,28 +83,45 @@ export function Board({
     return null;
   }
 
-  // visible (filtered) cards per column — drives both render and keyboard nav.
   const visible = board.cols.map((c) => ({
     col: c,
     cards: c.cards.filter((cd) => matchCard(cd, query)),
   }));
 
   function onDragStart(e: DragStartEvent) {
-    const found = locate(String(e.active.id));
-    setActiveCard(found?.card ?? null);
+    const type = (e.active.data.current as { type?: string })?.type;
+    if (type === "column") {
+      const col = board.cols.find((c) => c.id === String(e.active.id));
+      setActiveCol(col ?? null);
+    } else {
+      const found = locate(String(e.active.id));
+      setActiveCard(found?.card ?? null);
+    }
   }
 
-  // §V.5 — drag-drop mutates state then setBoard->commit. DOM not authoritative.
   function onDragEnd(e: DragEndEvent) {
+    const wasCol = !!activeCol;
     setActiveCard(null);
+    setActiveCol(null);
     const { active, over } = e;
-    if (!over) return;
+    if (!over || active.id === over.id) return;
 
+    // §V.20 — column reorder
+    if (wasCol) {
+      const fromIdx = board.cols.findIndex((c) => c.id === String(active.id));
+      const toIdx = board.cols.findIndex((c) => c.id === String(over.id));
+      if (fromIdx >= 0 && toIdx >= 0 && fromIdx !== toIdx) {
+        setBoard((b) => moveColumn(b, fromIdx, toIdx));
+      }
+      return;
+    }
+
+    // card move/reorder
     const from = locate(String(active.id));
     if (!from) return;
 
     const overData = over.data.current as
-      | { type?: string; colId?: string; cardId?: string }
+      | { type?: string; colId?: string }
       | undefined;
 
     let toCol: string;
@@ -100,6 +130,9 @@ export function Board({
     if (overData?.type === "col") {
       toCol = overData.colId!;
       toIndex = board.cols.find((c) => c.id === toCol)?.cards.length ?? 0;
+    } else if (overData?.type === "column") {
+      // dropped card onto column header — skip
+      return;
     } else {
       const target = locate(String(over.id));
       if (!target) return;
@@ -113,7 +146,7 @@ export function Board({
     setBoard((b) => moveCard(b, from.colId, toCol, from.card.id, toIndex));
   }
 
-  // §T17 — keyboard nav. Arrows move focus, Enter edits, Del deletes, n adds.
+  // §T17 — keyboard nav
   useEffect(() => {
     function focusCard(id: string | null) {
       setFocusedId(id);
@@ -127,7 +160,7 @@ export function Board({
     }
 
     const onKey = (e: KeyboardEvent) => {
-      if (editing) return; // dialog owns the keyboard
+      if (editing) return;
       const tag = (e.target as HTMLElement)?.tagName;
       if (tag === "INPUT" || tag === "TEXTAREA") return;
       if (e.ctrlKey || e.metaKey || e.altKey) return;
@@ -135,15 +168,11 @@ export function Board({
       const cols = visible;
       const flatEmpty = cols.every((c) => c.cards.length === 0);
 
-      // locate focused card position in the *visible* grid
       let ci = -1;
       let ri = -1;
       cols.forEach((c, i) => {
         const j = c.cards.findIndex((cd) => cd.id === focusedId);
-        if (j >= 0) {
-          ci = i;
-          ri = j;
-        }
+        if (j >= 0) { ci = i; ri = j; }
       });
 
       const pick = (i: number, j: number) => {
@@ -157,23 +186,18 @@ export function Board({
         case "ArrowDown":
           if (flatEmpty) return;
           e.preventDefault();
-          if (ci < 0) pick(0, 0);
-          else pick(ci, ri + 1);
+          if (ci < 0) pick(0, 0); else pick(ci, ri + 1);
           break;
         case "ArrowUp":
           if (flatEmpty) return;
           e.preventDefault();
-          if (ci < 0) pick(0, 0);
-          else pick(ci, ri - 1);
+          if (ci < 0) pick(0, 0); else pick(ci, ri - 1);
           break;
         case "ArrowRight": {
           if (ci < 0) return;
           e.preventDefault();
           for (let i = ci + 1; i < cols.length; i++) {
-            if (cols[i].cards.length) {
-              pick(i, ri);
-              break;
-            }
+            if (cols[i].cards.length) { pick(i, ri); break; }
           }
           break;
         }
@@ -181,10 +205,7 @@ export function Board({
           if (ci < 0) return;
           e.preventDefault();
           for (let i = ci - 1; i >= 0; i--) {
-            if (cols[i].cards.length) {
-              pick(i, ri);
-              break;
-            }
+            if (cols[i].cards.length) { pick(i, ri); break; }
           }
           break;
         }
@@ -200,9 +221,7 @@ export function Board({
             e.preventDefault();
             const colId = cols[ci].col.id;
             const cardId = cols[ci].cards[ri].id;
-            // move focus to a sensible neighbour before removal
-            const nextCard =
-              cols[ci].cards[ri + 1]?.id ?? cols[ci].cards[ri - 1]?.id ?? null;
+            const nextCard = cols[ci].cards[ri + 1]?.id ?? cols[ci].cards[ri - 1]?.id ?? null;
             setBoard((b) => deleteCard(b, colId, cardId));
             focusCard(nextCard);
           }
@@ -228,56 +247,61 @@ export function Board({
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
     >
-      <div
-        ref={scrollRef}
-        className="flex h-full items-start gap-3 overflow-x-auto p-3"
+      {/* §V.20 — SortableContext for column reorder */}
+      <SortableContext
+        items={board.cols.map((c) => c.id)}
+        strategy={horizontalListSortingStrategy}
       >
-        {visible.map(({ col, cards }) => (
-          <Column
-            key={col.id}
-            col={col}
-            cards={cards}
-            filtered={!!query && cards.length !== col.cards.length}
-            hiddenCount={col.cards.length - cards.length}
-            focusedId={focusedId}
-            onAddCard={(txt) => setBoard((b) => addCard(b, col.id, txt))}
-            onEditCard={(card) => setEditing({ colId: col.id, card })}
-            onDeleteCard={(cardId) =>
-              setBoard((b) => deleteCard(b, col.id, cardId))
-            }
-            onRename={(name) => setBoard((b) => renameColumn(b, col.id, name))}
-            onSetWip={(wip) => setBoard((b) => setColumnWip(b, col.id, wip))}
-            onSetColor={(color) => setBoard((b) => setColumnColor(b, col.id, color))}
-            onFocusCard={setFocusedId}
-            onDelete={() => {
-              if (
-                col.cards.length === 0 ||
-                window.confirm(`Delete column "${col.name}" and its cards?`)
-              ) {
-                setBoard((b) => deleteColumn(b, col.id));
-              }
-            }}
-          />
-        ))}
-
-        <Button
-          variant="outline"
-          className="mt-1 shrink-0"
-          onClick={() => setBoard((b) => addColumn(b, "New column"))}
+        <div
+          ref={scrollRef}
+          className="flex h-full items-start gap-3 overflow-x-auto p-3"
         >
-          <Plus size={16} /> Add column
-        </Button>
-      </div>
+          {visible.map(({ col, cards }) => (
+            <Column
+              key={col.id}
+              col={col}
+              cards={cards}
+              filtered={!!query && cards.length !== col.cards.length}
+              hiddenCount={col.cards.length - cards.length}
+              focusedId={focusedId}
+              compact={compact}
+              collapsed={collapsedCols.has(col.id)}
+              onToggleCollapse={() => toggleCollapse(col.id)}
+              onAddCard={(txt) => setBoard((b) => addCard(b, col.id, txt))}
+              onEditCard={(card) => setEditing({ colId: col.id, card })}
+              onDeleteCard={(cardId) => setBoard((b) => deleteCard(b, col.id, cardId))}
+              onRename={(name) => setBoard((b) => renameColumn(b, col.id, name))}
+              onSetWip={(wip) => setBoard((b) => setColumnWip(b, col.id, wip))}
+              onSetColor={(color) => setBoard((b) => setColumnColor(b, col.id, color))}
+              onFocusCard={setFocusedId}
+              onDelete={() => {
+                if (
+                  col.cards.length === 0 ||
+                  window.confirm(`Delete column "${col.name}" and its cards?`)
+                ) {
+                  setBoard((b) => deleteColumn(b, col.id));
+                }
+              }}
+            />
+          ))}
+
+          <Button
+            variant="outline"
+            className="mt-1 shrink-0"
+            onClick={() => setBoard((b) => addColumn(b, "New column"))}
+          >
+            <Plus size={16} /> Add column
+          </Button>
+        </div>
+      </SortableContext>
 
       <DragOverlay>
         {activeCard ? (
-          <CardItem
-            card={activeCard}
-            colId=""
-            onEdit={() => {}}
-            onDelete={() => {}}
-            onFocus={() => {}}
-          />
+          <CardItem card={activeCard} colId="" onEdit={() => {}} onDelete={() => {}} onFocus={() => {}} />
+        ) : activeCol ? (
+          <div className="w-72 rounded-lg border border-zinc-600 bg-zinc-800 p-2 opacity-90 shadow-xl">
+            <div className="text-sm font-semibold text-zinc-200">{activeCol.name}</div>
+          </div>
         ) : null}
       </DragOverlay>
 
@@ -286,10 +310,7 @@ export function Board({
         card={editing?.card ?? null}
         onClose={() => setEditing(null)}
         onSave={(patch) => {
-          if (editing)
-            setBoard((b) =>
-              updateCard(b, editing.colId, editing.card.id, patch)
-            );
+          if (editing) setBoard((b) => updateCard(b, editing.colId, editing.card.id, patch));
         }}
       />
     </DndContext>

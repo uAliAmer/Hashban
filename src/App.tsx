@@ -6,8 +6,10 @@ import { Toolbar } from "@/components/Toolbar";
 
 export default function App() {
   const api = useBoard();
-  // §V.11 — search/filter is ephemeral UI state: not in board, hash, or storage.
+  // §V.11 — ephemeral UI state: never in hash/storage
   const [query, setQuery] = useState("");
+  // §V.22 — compact view
+  const [compact, setCompact] = useState(false);
 
   // keyboard: Ctrl/Cmd+Z undo, Ctrl/Cmd+Shift+Z (or Ctrl+Y) redo (§T12)
   useEffect(() => {
@@ -42,13 +44,15 @@ export default function App() {
         overLimit={api.overLimit}
         query={query}
         setQuery={setQuery}
+        compact={compact}
+        setCompact={setCompact}
       />
       <main className="min-h-0 flex-1 overflow-auto">
         {/* §V.17 — swimlane grid when board.lanes present; normal column view otherwise */}
         {api.board.lanes && api.board.lanes.length > 0 ? (
           <SwimBoard board={api.board} setBoard={api.setBoard} query={query} />
         ) : (
-          <Board board={api.board} setBoard={api.setBoard} query={query} />
+          <Board board={api.board} setBoard={api.setBoard} query={query} compact={compact} />
         )}
       </main>
     </div>
