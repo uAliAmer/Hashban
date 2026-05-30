@@ -65,18 +65,15 @@ function TypedConfirmDialog({
         <span className="rounded bg-zinc-800 px-1.5 py-0.5 font-mono font-semibold text-zinc-200">
           {word}
         </span>
-        <span>to continue</span>
         <button
           onClick={copyWord}
-          className="ml-auto flex items-center gap-1 rounded px-1.5 py-0.5 text-zinc-500 hover:text-zinc-200 transition-colors"
-          title="Copy word"
+          className="rounded p-0.5 text-zinc-500 hover:text-zinc-200 transition-colors"
+          title="Copy"
           aria-label="Copy word"
         >
           {wordCopied ? <Check size={12} className="text-green-400" /> : <Copy size={12} />}
-          <span className={`text-[10px] ${wordCopied ? "text-green-400" : ""}`}>
-            {wordCopied ? "Copied" : "Copy"}
-          </span>
         </button>
+        <span>to continue</span>
       </div>
 
       <input
