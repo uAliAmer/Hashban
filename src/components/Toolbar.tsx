@@ -329,7 +329,7 @@ export function Toolbar({
           aria-label="Clear board"
           title="Clear board"
           onClick={async () => {
-            if (await confirm("Reset to a fresh empty board? This cannot be undone."))
+            if (await confirm("Reset to a fresh empty board? This cannot be undone.", { danger: true, requireTyped: "confirm" }))
               setBoard(defaultBoard());
           }}
         >
