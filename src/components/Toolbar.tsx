@@ -3,6 +3,7 @@ import QRCode from "qrcode";
 import {
   AlignJustify,
   Download,
+  Keyboard,
   Layers,
   MoreHorizontal,
   Redo2,
@@ -20,6 +21,43 @@ import { Board, defaultBoard, isBoard, SOFT_LIMIT } from "@/lib/board";
 import { addLane as opAddLane, renameBoard } from "@/lib/ops";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Dialog } from "@/components/ui/dialog";
+
+const SHORTCUTS: { keys: string[]; action: string }[] = [
+  { keys: ["↑", "↓"], action: "Move focus between cards" },
+  { keys: ["←", "→"], action: "Jump to adjacent column" },
+  { keys: ["Enter"], action: "Edit focused card" },
+  { keys: ["Delete", "Backspace"], action: "Delete focused card" },
+  { keys: ["n"], action: "Add card to focused column" },
+  { keys: ["Ctrl/⌘", "Z"], action: "Undo" },
+  { keys: ["Ctrl/⌘", "Shift", "Z"], action: "Redo" },
+  { keys: ["Ctrl", "Y"], action: "Redo (alternate)" },
+];
+
+function ShortcutsDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
+  return (
+    <Dialog open={open} onClose={onClose}>
+      <div className="mb-4 flex items-center gap-2">
+        <Keyboard size={16} className="text-zinc-400" />
+        <h2 className="text-sm font-semibold text-zinc-200">Keyboard Shortcuts</h2>
+      </div>
+      <div className="flex flex-col gap-1.5">
+        {SHORTCUTS.map((s) => (
+          <div key={s.action} className="flex items-center justify-between gap-4">
+            <span className="text-xs text-zinc-400">{s.action}</span>
+            <div className="flex shrink-0 items-center gap-1">
+              {s.keys.map((k) => (
+                <kbd key={k} className="rounded border border-zinc-600 bg-zinc-800 px-1.5 py-0.5 text-[11px] font-mono text-zinc-300">
+                  {k}
+                </kbd>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </Dialog>
+  );
+}
 
 // Share button: copy + QR popover
 function ShareButton() {
@@ -108,6 +146,7 @@ function MoreMenu({
   onClear: () => void;
 }) {
   const [open, setOpen] = useState(false);
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -151,9 +190,12 @@ function MoreMenu({
           {item("Export JSON", <Download size={14} />, onExport)}
           {item("Import JSON", <Upload size={14} />, onImport)}
           <div className="my-1.5 border-t border-zinc-800" />
+          {item("Keyboard shortcuts", <Keyboard size={14} />, () => setShortcutsOpen(true))}
+          <div className="my-1.5 border-t border-zinc-800" />
           {item("Clear board", <Trash size={14} />, onClear)}
         </div>
       )}
+      <ShortcutsDialog open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
     </div>
   );
 }
