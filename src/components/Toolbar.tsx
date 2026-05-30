@@ -20,22 +20,25 @@ import { Input } from "@/components/ui/input";
 
 // §T25/§V.19 — Share button: copies URL on click + shows inline QR popover.
 function ShareButton() {
-  const [copied, setCopied] = useState(false);
+  const [copied, setCopied] = useState(false);       // main button flash
+  const [linkCopied, setLinkCopied] = useState(false); // inline copy animation
   const [qrOpen, setQrOpen] = useState(false);
   const [qrDataUrl, setQrDataUrl] = useState("");
   const popoverRef = useRef<HTMLDivElement>(null);
 
-  async function handleShare() {
-    // copy to clipboard
+  async function copyUrl() {
     try {
       await navigator.clipboard.writeText(window.location.href);
     } catch {
       window.prompt("Copy this URL:", window.location.href);
     }
+  }
+
+  async function handleShare() {
+    await copyUrl();
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
 
-    // generate QR and open popover
     if (!qrOpen) {
       QRCode.toDataURL(window.location.href, {
         width: 200, margin: 1,
@@ -45,6 +48,12 @@ function ShareButton() {
     } else {
       setQrOpen(false);
     }
+  }
+
+  async function handleInlineCopy() {
+    await copyUrl();
+    setLinkCopied(true);
+    setTimeout(() => setLinkCopied(false), 2000);
   }
 
   // close on click outside
@@ -58,6 +67,8 @@ function ShareButton() {
     return () => document.removeEventListener("mousedown", handler);
   }, [qrOpen]);
 
+  const url = window.location.href;
+
   return (
     <div ref={popoverRef} className="relative">
       <Button onClick={handleShare} size="sm">
@@ -65,9 +76,9 @@ function ShareButton() {
       </Button>
 
       {qrOpen && (
-        <div className="absolute right-0 top-full z-50 mt-2 w-56 rounded-xl border border-zinc-700 bg-zinc-900 p-3 shadow-2xl">
+        <div className="absolute right-0 top-full z-50 mt-2 w-60 rounded-xl border border-zinc-700 bg-zinc-900 p-3 shadow-2xl">
           <div className="mb-2 flex items-center justify-between">
-            <span className="text-xs font-medium text-zinc-300">Scan to share</span>
+            <span className="text-xs font-medium text-zinc-300">Share board</span>
             <button
               onClick={() => setQrOpen(false)}
               className="rounded p-0.5 text-zinc-500 hover:text-zinc-200"
@@ -76,6 +87,46 @@ function ShareButton() {
               <X size={13} />
             </button>
           </div>
+
+          {/* link row with animated copy feedback */}
+          <div
+            className={`mb-3 flex items-center gap-1.5 overflow-hidden rounded-lg border px-2 py-1.5 transition-all duration-300 ${
+              linkCopied
+                ? "border-green-500/60 bg-green-950/40"
+                : "border-zinc-700 bg-zinc-800"
+            }`}
+          >
+            <span
+              className={`flex-1 truncate text-[11px] transition-colors duration-300 ${
+                linkCopied ? "text-green-300" : "text-zinc-400"
+              }`}
+            >
+              {url.length > 36 ? url.slice(0, 36) + "…" : url}
+            </span>
+            <button
+              onClick={handleInlineCopy}
+              className={`shrink-0 rounded p-1 transition-all duration-200 ${
+                linkCopied
+                  ? "text-green-400 scale-110"
+                  : "text-zinc-500 hover:text-zinc-200"
+              }`}
+              aria-label="Copy link"
+              title="Copy link"
+            >
+              {linkCopied ? (
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              ) : (
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                </svg>
+              )}
+            </button>
+          </div>
+
+          {/* QR code */}
           {qrDataUrl ? (
             <img src={qrDataUrl} alt="QR code" className="w-full rounded-lg" />
           ) : (
@@ -83,11 +134,7 @@ function ShareButton() {
               Generating…
             </div>
           )}
-          <p className="mt-2 break-all text-center text-[9px] text-zinc-600">
-            {window.location.href.length > 60
-              ? window.location.href.slice(0, 60) + "…"
-              : window.location.href}
-          </p>
+          <p className="mt-1.5 text-center text-[9px] text-zinc-600">Scan to open on another device</p>
         </div>
       )}
     </div>
