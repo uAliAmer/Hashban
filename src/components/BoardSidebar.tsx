@@ -58,7 +58,7 @@ function BoardPreview({ entry, isCurrent }: { entry: BoardEntry; isCurrent: bool
 }
 
 export function BoardSidebar({ board }: { board: Board }) {
-  const { index, saveBoard, deleteBoard, switchBoard } = useBoardIndex();
+  const { index, loading, saveBoard, deleteBoard, switchBoard } = useBoardIndex();
   const [open, setOpen] = useState(false);
   const [saveStatus, setSaveStatus] = useState<"idle" | "saved" | "uptodate">("idle");
 
@@ -74,13 +74,13 @@ export function BoardSidebar({ board }: { board: Board }) {
   // already saved if any entry has this exact hash
   const alreadySaved = index.some(isCurrent);
 
-  function handleSaveClick() {
+  async function handleSaveClick() {
     if (alreadySaved) {
       setSaveStatus("uptodate");
       setTimeout(() => setSaveStatus("idle"), 2000);
       return;
     }
-    saveBoard(board);
+    await saveBoard(board);
     setSaveStatus("saved");
     setTimeout(() => setSaveStatus("idle"), 1500);
   }
@@ -175,7 +175,13 @@ export function BoardSidebar({ board }: { board: Board }) {
 
         {/* board list */}
         <div className="flex-1 overflow-y-auto px-4 py-3">
-          {index.length === 0 ? (
+          {loading ? (
+            <div className="flex flex-col gap-2.5">
+              {[1, 2].map((i) => (
+                <div key={i} className="h-20 animate-pulse rounded-lg bg-zinc-800/60" />
+              ))}
+            </div>
+          ) : index.length === 0 ? (
             <div className="mt-10 text-center">
               <p className="text-sm text-zinc-600">No saved boards yet.</p>
               <p className="mt-1 text-xs text-zinc-700">

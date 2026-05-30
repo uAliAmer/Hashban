@@ -60,6 +60,7 @@ templateBoard(name: 'sprint'|'gtd'|'hiring'): Board  // preset boards
 - V21: multi-board index ∈ localStorage only. ⊥ authoritative. hash = source of truth for active board (V1 preserved).
 - V22: compact view = ephemeral display toggle. ⊥ hash, ⊥ persisted (V11 pattern).
 - V23: col collapse = ephemeral per-col toggle. ⊥ hash, ⊥ persisted.
+- V24: board index stored in IndexedDB (`hashban` db, `boards` store). localStorage `hashban:boards` migrated on first open then removed. localStorage `hashban:last` (autosave cache) unchanged — single string, sync read required at init.
 
 ## §T — tasks
 ```
@@ -93,6 +94,7 @@ T26|x|column drag-and-drop reorder (dnd-kit sortable on columns)|V20,V5
 T27|x|multiple boards (localStorage index, board switcher in toolbar)|V21,V1
 T28|x|compact view (toolbar toggle, cards collapse to title-only rows)|V22
 T29|x|column collapse (fold column to slim vertical bar, ephemeral)|V23
+T30|x|IndexedDB board index (replace localStorage, migrate existing data)|V24
 ```
 
 ## §B — bugs
