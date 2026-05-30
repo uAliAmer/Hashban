@@ -12,57 +12,57 @@ export const THEMES: Theme[] = [
   {
     id: "default",
     label: "Default",
-    bg: "#0f1115",
-    preview: "#1e2128",   // slightly brighter so swatch is visible
+    bg: "#1c1f26",
+    preview: "#1c1f26",
   },
   {
     id: "void",
     label: "Void",
-    bg: "#0a0a0a",
-    preview: "#1a1a1a",
+    bg: "#111111",
+    preview: "#111111",
   },
   {
     id: "midnight",
     label: "Midnight",
-    bg: "#080e1a",
-    preview: "#0f1e3d",   // visible navy blue
+    bg: "#111827",    // slate-900
+    preview: "#111827",
   },
   {
     id: "nebula",
     label: "Nebula",
-    bg: "#0d0a1e",
-    preview: "#1e1540",   // visible deep purple
+    bg: "#1a1333",
+    preview: "#1a1333",
   },
   {
     id: "warm",
     label: "Warm",
-    bg: "#110e0b",
-    preview: "#2a1f14",   // visible warm brown
+    bg: "#1c1410",
+    preview: "#1c1410",
   },
   // ── Gradient ───────────────────────────────────────────────────
   {
     id: "aurora",
     label: "Aurora",
-    bg: "linear-gradient(135deg, #1e1b4b 0%, #0f0f1a 55%, #0f172a 100%)",
-    preview: "linear-gradient(135deg, #3730a3, #1e1b4b)",  // indigo → dark
+    bg: "linear-gradient(135deg, #2d2a6e 0%, #1a1a2e 55%, #16213e 100%)",
+    preview: "linear-gradient(135deg, #3730a3, #1a1a2e)",
   },
   {
     id: "ocean",
     label: "Ocean",
-    bg: "linear-gradient(135deg, #0a1628 0%, #0d2137 50%, #051a14 100%)",
-    preview: "linear-gradient(135deg, #1d4ed8, #0d2137)",  // blue → dark teal
+    bg: "linear-gradient(135deg, #0f2444 0%, #163048 50%, #0a2a1e 100%)",
+    preview: "linear-gradient(135deg, #1d4ed8, #0f2444)",
   },
   {
     id: "cosmos",
     label: "Cosmos",
-    bg: "linear-gradient(135deg, #0d001a 0%, #000d1a 50%, #1a0d33 100%)",
-    preview: "linear-gradient(135deg, #6b21a8, #0d001a)",  // purple → black
+    bg: "linear-gradient(135deg, #1a0030 0%, #0a0f2a 50%, #200040 100%)",
+    preview: "linear-gradient(135deg, #6b21a8, #1a0030)",
   },
   {
     id: "ember",
     label: "Ember",
-    bg: "linear-gradient(135deg, #1c0700 0%, #0f0f0f 45%, #140014 100%)",
-    preview: "linear-gradient(135deg, #c2410c, #1c0700)",  // orange-red → dark
+    bg: "linear-gradient(135deg, #2d0e00 0%, #1a1010 45%, #1e001e 100%)",
+    preview: "linear-gradient(135deg, #c2410c, #2d0e00)",
   },
 ];
 
