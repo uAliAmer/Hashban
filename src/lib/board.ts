@@ -78,6 +78,27 @@ export function demoBoard(): Board {
     cols: [
       {
         id: genId(),
+        name: "🧠 Brainstorming",
+        color: "#8b5cf6",
+        cards: [
+          { id: genId(), txt: "What if cards could have voice notes?", color: "#8b5cf6" },
+          { id: genId(), txt: "Dark mode themes with custom accent colors", color: "#a855f7" },
+          { id: genId(), txt: "Keyboard-only power user mode", color: "#7c3aed" },
+          { id: genId(), txt: "Export board as image / screenshot" },
+        ],
+      },
+      {
+        id: genId(),
+        name: "📋 To Do",
+        color: "#3b82f6",
+        cards: [
+          { id: genId(), txt: "Write onboarding guide for new users", color: "#3b82f6", priority: "P2" },
+          { id: genId(), txt: "Add card comments / notes field", color: "#60a5fa", priority: "P3" },
+          { id: genId(), txt: "Improve mobile drag-and-drop feel", priority: "P2" },
+        ],
+      },
+      {
+        id: genId(),
         name: "📥 Backlog",
         color: "#6b7280",
         cards: [
