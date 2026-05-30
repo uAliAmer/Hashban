@@ -65,7 +65,7 @@ function ShortcutsDialog({ open, onClose }: { open: boolean; onClose: () => void
 const QR_MAX_URL = 3500;
 
 // Worker URL — update after deploying hashban-short
-const SHORTENER_URL = "https://hashban-short.ualiamer7.workers.dev";
+const SHORTENER_URL = "https://hashban-short.ali-demo.workers.dev";
 
 function ShareButton() {
   const [copied, setCopied] = useState(false);
