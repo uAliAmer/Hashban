@@ -1,6 +1,7 @@
+import { useRef } from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Pencil, Trash2 } from "lucide-react";
+import { GripVertical, Trash2 } from "lucide-react";
 import { Card } from "@/lib/board";
 import { cn } from "@/lib/utils";
 
@@ -10,6 +11,9 @@ const PRIORITY_STYLE: Record<string, string> = {
   P3: "bg-yellow-700/80 text-yellow-100",
 };
 
+// Click card body → open edit. Click + drag → move card.
+// moveRef tracks pointer displacement since last pointerdown;
+// onClick only opens edit when movement was below drag threshold.
 export function CardItem({
   card,
   colId,
@@ -27,6 +31,8 @@ export function CardItem({
   onDelete: () => void;
   onFocus: () => void;
 }) {
+  const moveRef = useRef(0);
+
   const {
     attributes,
     listeners,
@@ -51,7 +57,16 @@ export function CardItem({
   const checkTotal = card.checklist?.length ?? 0;
   const checkDone = card.checklist?.filter((i) => i.done).length ?? 0;
 
-  // §V.22 — compact: title-only single-line row; drag from anywhere on row
+  // shared pointer tracking handlers
+  const pointerHandlers = {
+    onPointerDown: () => { moveRef.current = 0; },
+    onPointerMove: (e: React.PointerEvent) => {
+      moveRef.current += Math.abs(e.movementX) + Math.abs(e.movementY);
+    },
+    onClick: () => { if (moveRef.current < 6) onEdit(); },
+  };
+
+  // §V.22 — compact view
   if (compact) {
     return (
       <div
@@ -61,9 +76,10 @@ export function CardItem({
         onFocus={onFocus}
         {...attributes}
         {...listeners}
+        {...pointerHandlers}
         className={cn(
-          "group relative flex cursor-grab items-center gap-1.5 rounded border bg-[var(--color-card-bg)] px-2 py-1 text-xs focus:outline-none active:cursor-grabbing",
-          focused ? "border-zinc-400 ring-1 ring-zinc-400" : "border-zinc-700"
+          "group relative flex cursor-pointer items-center gap-1.5 rounded border bg-[var(--color-card-bg)] px-2 py-1 text-xs focus:outline-none",
+          focused ? "border-zinc-400 ring-1 ring-zinc-400" : "border-zinc-700 hover:border-zinc-500"
         )}
       >
         {card.color && (
@@ -83,14 +99,14 @@ export function CardItem({
             {card.due}
           </span>
         )}
-        <div className="absolute right-1 flex gap-0.5 opacity-0 group-hover:opacity-100">
-          <button onClick={(e) => { e.stopPropagation(); onEdit(); }} className="rounded p-0.5 text-zinc-500 hover:text-zinc-200" aria-label="Edit card">
-            <Pencil size={11} />
-          </button>
-          <button onClick={(e) => { e.stopPropagation(); onDelete(); }} className="rounded p-0.5 text-zinc-500 hover:text-red-300" aria-label="Delete card">
-            <Trash2 size={11} />
-          </button>
-        </div>
+        <button
+          onClick={(e) => { e.stopPropagation(); onDelete(); }}
+          onPointerDown={(e) => e.stopPropagation()}
+          className="shrink-0 rounded p-0.5 text-zinc-600 opacity-0 hover:text-red-400 group-hover:opacity-100"
+          aria-label="Delete card"
+        >
+          <Trash2 size={11} />
+        </button>
       </div>
     );
   }
@@ -103,19 +119,17 @@ export function CardItem({
       onFocus={onFocus}
       {...attributes}
       {...listeners}
+      {...pointerHandlers}
       className={cn(
-        "group relative cursor-grab rounded-md border bg-[var(--color-card-bg)] p-2 text-sm shadow-sm focus:outline-none active:cursor-grabbing",
-        focused ? "border-zinc-400 ring-2 ring-zinc-400" : "border-zinc-700"
+        "group relative cursor-pointer rounded-md border bg-[var(--color-card-bg)] p-2 text-sm shadow-sm focus:outline-none",
+        focused ? "border-zinc-400 ring-2 ring-zinc-400" : "border-zinc-700 hover:border-zinc-500"
       )}
     >
       {card.color && (
-        <span
-          className="absolute left-0 top-0 h-full w-1 rounded-l-md"
-          style={{ background: card.color }}
-        />
+        <span className="absolute left-0 top-0 h-full w-1 rounded-l-md" style={{ background: card.color }} />
       )}
 
-      <div className="flex items-start justify-between gap-1 pr-10 pl-1">
+      <div className="flex items-start gap-1 pl-1 pr-6">
         <div className="flex-1 whitespace-pre-wrap break-words" dir="auto">{card.txt}</div>
         {card.priority && (
           <span className={cn("shrink-0 rounded px-1 py-0.5 text-[10px] font-semibold", PRIORITY_STYLE[card.priority])}>
@@ -130,7 +144,6 @@ export function CardItem({
         </div>
       )}
 
-      {/* §V.14 — checklist progress */}
       {checkTotal > 0 && (
         <div className="mt-1.5 flex items-center gap-1.5 pl-1">
           <div className="h-1 flex-1 overflow-hidden rounded-full bg-zinc-700">
@@ -151,20 +164,13 @@ export function CardItem({
         </div>
       )}
 
-      {/* action buttons — stopPropagation so they don't bubble drag events */}
-      <div className="absolute right-1 top-1 flex gap-0.5 opacity-0 group-hover:opacity-100">
-        <button
-          onClick={(e) => { e.stopPropagation(); onEdit(); }}
-          onPointerDown={(e) => e.stopPropagation()}
-          className="rounded p-1 text-zinc-400 hover:bg-zinc-700 hover:text-zinc-100"
-          aria-label="Edit card"
-        >
-          <Pencil size={13} />
-        </button>
+      {/* drag hint + delete — shown on hover */}
+      <div className="absolute right-1 top-1 flex items-center gap-0.5 opacity-0 group-hover:opacity-100">
+        <GripVertical size={13} className="cursor-grab text-zinc-600 active:cursor-grabbing" />
         <button
           onClick={(e) => { e.stopPropagation(); onDelete(); }}
           onPointerDown={(e) => e.stopPropagation()}
-          className="rounded p-1 text-zinc-400 hover:bg-zinc-700 hover:text-red-300"
+          className="rounded p-0.5 text-zinc-600 hover:text-red-400"
           aria-label="Delete card"
         >
           <Trash2 size={13} />
