@@ -216,6 +216,7 @@ export function Toolbar({
         <Input
           autoFocus
           defaultValue={board.t}
+          dir="auto"
           onBlur={(e) => {
             setBoard((b) => renameBoard(b, e.target.value.trim() || "Board"));
             setEditingTitle(false);
@@ -229,6 +230,7 @@ export function Toolbar({
       ) : (
         <button
           onClick={() => setEditingTitle(true)}
+          dir="auto"
           className="text-base font-semibold text-zinc-100 hover:underline"
           title="Rename board"
         >

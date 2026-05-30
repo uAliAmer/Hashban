@@ -86,6 +86,7 @@ export function CardDialog({
         value={txt}
         onChange={(e) => setTxt(e.target.value)}
         autoFocus
+        dir="auto"
         className="mb-3"
       />
 
@@ -94,6 +95,7 @@ export function CardDialog({
         value={desc}
         onChange={(e) => setDesc(e.target.value)}
         placeholder="optional"
+        dir="auto"
         className="mb-3"
       />
 
@@ -164,6 +166,7 @@ export function CardDialog({
                   prev.map((i) => i.id === item.id ? { ...i, txt: e.target.value } : i)
                 )
               }
+              dir="auto"
               className={`flex-1 bg-transparent text-xs text-zinc-200 focus:outline-none ${
                 item.done ? "line-through text-zinc-500" : ""
               }`}

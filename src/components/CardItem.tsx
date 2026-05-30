@@ -74,7 +74,7 @@ export function CardItem({
             {card.priority}
           </span>
         )}
-        <span className="flex-1 truncate text-zinc-200">{card.txt}</span>
+        <span className="flex-1 truncate text-zinc-200" dir="auto">{card.txt}</span>
         {checkTotal > 0 && (
           <span className="shrink-0 text-[10px] tabular-nums text-zinc-500">{checkDone}/{checkTotal}</span>
         )}
@@ -116,7 +116,7 @@ export function CardItem({
       )}
 
       <div className="flex items-start justify-between gap-1 pr-10 pl-1">
-        <div className="whitespace-pre-wrap break-words">{card.txt}</div>
+        <div className="whitespace-pre-wrap break-words" dir="auto">{card.txt}</div>
         {card.priority && (
           <span className={cn("shrink-0 rounded px-1 py-0.5 text-[10px] font-semibold", PRIORITY_STYLE[card.priority])}>
             {card.priority}
@@ -125,7 +125,7 @@ export function CardItem({
       </div>
 
       {card.desc && (
-        <div className="mt-1 line-clamp-2 pl-1 text-xs text-zinc-400">
+        <div className="mt-1 line-clamp-2 pl-1 text-xs text-zinc-400" dir="auto">
           {card.desc}
         </div>
       )}

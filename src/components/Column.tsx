@@ -156,6 +156,7 @@ export function Column({
           <Input
             autoFocus
             defaultValue={col.name}
+            dir="auto"
             onPointerDown={(e) => e.stopPropagation()}
             onBlur={(e) => { onRename(e.target.value.trim() || col.name); setEditingName(false); }}
             onKeyDown={(e) => {
@@ -168,6 +169,7 @@ export function Column({
           <button
             onClick={() => setEditingName(true)}
             onPointerDown={(e) => e.stopPropagation()}
+            dir="auto"
             className="flex-1 truncate text-left text-sm font-semibold text-zinc-200"
             title="Click to rename"
           >
