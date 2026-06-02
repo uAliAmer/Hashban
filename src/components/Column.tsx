@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef, useState, type CSSProperties } from "react";
 import {
   SortableContext,
   verticalListSortingStrategy,
@@ -98,6 +98,12 @@ export function Column({
 
   const overLimit = col.wip !== undefined && col.cards.length > col.wip;
 
+  // §V.15 — column color tints the whole column (translucent) over a glass blur.
+  // alpha hex: ~13% fill, ~40% border. falls back to theme bg when no color.
+  const tintStyle: CSSProperties | undefined = col.color
+    ? { background: `${col.color}22`, borderColor: `${col.color}66` }
+    : undefined;
+
   function commitAdd() {
     const t = draft.trim();
     if (t) onAddCard(t);
@@ -121,14 +127,14 @@ export function Column({
     return (
       <div
         ref={setSortableRef}
-        style={sortableStyle}
-        className="relative flex h-48 w-10 shrink-0 cursor-pointer select-none flex-col items-center justify-between rounded-lg bg-[var(--color-col-bg)] py-2"
+        style={{ ...sortableStyle, ...tintStyle }}
+        className={cn(
+          "relative flex h-48 w-10 shrink-0 cursor-pointer select-none flex-col items-center justify-between rounded-lg border border-transparent py-2 backdrop-blur-md",
+          !col.color && "bg-[var(--color-col-bg)]"
+        )}
         onClick={onToggleCollapse}
         title={`Expand "${col.name}"`}
       >
-        {col.color && (
-          <div className="absolute left-0 top-0 h-1 w-full rounded-t-lg" style={{ background: col.color }} />
-        )}
         <ChevronLeft size={14} className="rotate-180 text-zinc-500" />
         <span
           className="flex-1 truncate text-[11px] font-medium text-zinc-400"
@@ -144,17 +150,15 @@ export function Column({
   return (
     <div
       ref={setSortableRef}
-      style={sortableStyle}
-      className="relative flex w-72 shrink-0 flex-col rounded-lg bg-[var(--color-col-bg)] p-2"
-    >
-      {col.color && (
-        <div className="absolute left-0 top-0 h-1 w-full rounded-t-lg" style={{ background: col.color }} />
+      style={{ ...sortableStyle, ...tintStyle }}
+      className={cn(
+        "relative flex w-72 shrink-0 flex-col rounded-lg border border-transparent p-2 backdrop-blur-md",
+        !col.color && "bg-[var(--color-col-bg)]"
       )}
-
+    >
       {/* §V.20 — drag from anywhere on header; activationConstraint distance:5 means clicks still fire */}
       <div
         className="mb-2 flex cursor-grab items-center gap-1 active:cursor-grabbing"
-        style={{ marginTop: col.color ? "4px" : undefined }}
         {...attributes}
         {...listeners}
       >

@@ -51,7 +51,7 @@ templateBoard(name: 'sprint'|'gtd'|'hiring'): Board  // preset boards
 - V12: col `wip?` set & cards.length > wip → over-limit signal. ⊥ block add (soft limit).
 - V13: roundtrip ! survive optional `wip` (V2 holds w/ & w/o field).
 - V14: card `checklist?` items ! have unique ids within card. roundtrip preserves all items & done state.
-- V15: col `color?` string | absent. roundtrip preserves.
+- V15: col `color?` string | absent. roundtrip preserves. set → tints whole column translucent (`+22` fill, `+66` border) over `backdrop-blur-md` glass. ⊥ color → theme bg.
 - V16: card `priority?` ∈ {P1,P2,P3} | absent. roundtrip preserves.
 - V17: `board.lanes?` optional. absent → single implicit lane. card `laneId?` absent → implicit lane. roundtrip preserves.
 - V18: `?template=<name>` param & ⊥ hash → seed template board, remove param. existing hash → ignore param (V10 extended).
