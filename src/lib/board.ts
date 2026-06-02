@@ -102,17 +102,32 @@ export function demoBoard(): Board {
     t.setDate(t.getDate() + d);
     return t.toISOString().slice(0, 10);
   };
+
+  // §V.25 — label registry. cards reference these by id.
+  const lBug = genId();
+  const lFeature = genId();
+  const lDesign = genId();
+  const lUrgent = genId();
+  const lDocs = genId();
+
   return {
     t: "✨ Hashban Demo",
+    labels: [
+      { id: lBug, name: "Bug", color: "#ef4444" },
+      { id: lFeature, name: "Feature", color: "#22c55e" },
+      { id: lDesign, name: "Design", color: "#8b5cf6" },
+      { id: lUrgent, name: "Urgent", color: "#f97316" },
+      { id: lDocs, name: "Docs", color: "#3b82f6" },
+    ],
     cols: [
       {
         id: genId(),
         name: "🧠 Brainstorming",
         color: "#8b5cf6",
         cards: [
-          { id: genId(), txt: "What if cards could have voice notes?", color: "#8b5cf6" },
-          { id: genId(), txt: "Dark mode themes with custom accent colors", color: "#a855f7" },
-          { id: genId(), txt: "Keyboard-only power user mode", color: "#7c3aed" },
+          { id: genId(), txt: "What if cards could have voice notes?", color: "#8b5cf6", labels: [lFeature] },
+          { id: genId(), txt: "Dark mode themes with custom accent colors", color: "#a855f7", labels: [lDesign] },
+          { id: genId(), txt: "Keyboard-only power user mode", color: "#7c3aed", labels: [lFeature] },
           { id: genId(), txt: "Export board as image / screenshot" },
         ],
       },
@@ -121,9 +136,16 @@ export function demoBoard(): Board {
         name: "📋 To Do",
         color: "#3b82f6",
         cards: [
-          { id: genId(), txt: "Write onboarding guide for new users", color: "#3b82f6", priority: "P2" },
-          { id: genId(), txt: "Add card comments / notes field", color: "#60a5fa", priority: "P3" },
-          { id: genId(), txt: "Improve mobile drag-and-drop feel", priority: "P2" },
+          {
+            id: genId(),
+            txt: "Click a label below to switch text ↔ colors",
+            desc: "Labels collapse to color bars or expand to text — click any label chip on a card to toggle the whole board.",
+            labels: [lDesign, lFeature],
+            color: "#3b82f6",
+          },
+          { id: genId(), txt: "Write onboarding guide for new users", color: "#3b82f6", priority: "P2", labels: [lDocs] },
+          { id: genId(), txt: "Add card comments / notes field", color: "#60a5fa", priority: "P3", labels: [lFeature] },
+          { id: genId(), txt: "Improve mobile drag-and-drop feel", priority: "P2", labels: [lDesign] },
         ],
       },
       {
@@ -133,10 +155,11 @@ export function demoBoard(): Board {
         cards: [
           {
             id: genId(),
-            txt: "Click me to edit this card",
-            desc: "Single click opens edit — set title, description, priority, color, due date, and checklist.",
+            txt: "Open a card → add labels with custom text + color",
+            desc: "Single click opens edit — set title, description, priority, color, due date, checklist, and reusable labels.",
             color: "#3b82f6",
             priority: "P3",
+            labels: [lDocs],
           },
           {
             id: genId(),
@@ -155,6 +178,7 @@ export function demoBoard(): Board {
             color: "#f59e0b",
             priority: "P1",
             due: iso(3),
+            labels: [lFeature, lUrgent],
           },
           {
             id: genId(),
@@ -176,10 +200,16 @@ export function demoBoard(): Board {
           },
           {
             id: genId(),
-            txt: "Overdue card",
+            txt: "Color a column via the 🎨 palette — it tints the whole column with a glass blur",
+            labels: [lDesign],
+          },
+          {
+            id: genId(),
+            txt: "Login screen crashes on Safari",
             color: "#ef4444",
             priority: "P1",
             due: iso(-2),
+            labels: [lBug, lUrgent],
           },
         ],
       },
@@ -193,16 +223,19 @@ export function demoBoard(): Board {
             txt: "Share button → copies URL + shows QR code",
             desc: "The URL is the board. Send it to anyone — no account needed.",
             color: "#10b981",
+            labels: [lFeature],
           },
           {
             id: genId(),
             txt: "Boards sidebar → auto-saves every edit to your browser",
             color: "#3b82f6",
+            labels: [lFeature],
           },
           {
             id: genId(),
             txt: "Pick a background theme via the 🎨 icon in the toolbar",
             color: "#a855f7",
+            labels: [lDesign],
           },
         ],
       },
