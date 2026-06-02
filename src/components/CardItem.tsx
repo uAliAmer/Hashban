@@ -44,6 +44,8 @@ function LabelChips({
   return (
     <>
       {labels.map((lb) => (
+        // single morphing chip — height/padding/min-width and the text span's
+        // max-width+opacity all animate, so color-bar ↔ text-pill is smooth.
         <button
           key={lb.id}
           type="button"
@@ -52,19 +54,23 @@ function LabelChips({
           onPointerDown={stop}
           title={title ?? lb.name}
           className={cn(
-            "shrink-0 leading-tight",
-            onToggle && "cursor-pointer",
-            labelText
-              ? "max-w-32 truncate rounded px-1.5 py-0.5 text-[10px] font-medium"
-              : "h-2 w-7 rounded-full"
+            "flex shrink-0 items-center overflow-hidden rounded-full transition-all duration-300 ease-out",
+            onToggle && "cursor-pointer"
           )}
-          style={
-            labelText
-              ? { background: lb.color, color: labelTextColor(lb.color) }
-              : { background: lb.color }
-          }
+          style={{
+            background: lb.color,
+            color: labelTextColor(lb.color),
+            height: labelText ? "1.125rem" : "0.5rem",
+            minWidth: labelText ? 0 : "1.75rem",
+            paddingInline: labelText ? "0.375rem" : 0,
+          }}
         >
-          {labelText ? lb.name : null}
+          <span
+            className="overflow-hidden whitespace-nowrap text-[10px] font-medium leading-none transition-all duration-300 ease-out"
+            style={{ maxWidth: labelText ? "8rem" : 0, opacity: labelText ? 1 : 0 }}
+          >
+            {lb.name}
+          </span>
         </button>
       ))}
     </>
