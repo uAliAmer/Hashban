@@ -50,6 +50,7 @@ function CellDropZone({
   focusedId,
   labels,
   labelText,
+  onToggleLabels,
   onAddCard,
   onEditCard,
   onDeleteCard,
@@ -63,6 +64,7 @@ function CellDropZone({
   focusedId: string | null;
   labels: Label[];
   labelText?: boolean;
+  onToggleLabels?: () => void;
   onAddCard: () => void;
   onEditCard: (card: Card) => void;
   onDeleteCard: (cardId: string) => void;
@@ -90,6 +92,7 @@ function CellDropZone({
             focused={card.id === focusedId}
             labels={labels}
             labelText={labelText}
+            onToggleLabels={onToggleLabels}
             onFocus={() => onFocusCard(card.id)}
             onEdit={() => onEditCard(card)}
             onDelete={() => onDeleteCard(card.id)}
@@ -115,6 +118,7 @@ function LaneRow({
   query,
   focusedId,
   labelText,
+  onToggleLabels,
   onFocusCard,
   onEditCard,
   onAddCard,
@@ -127,6 +131,7 @@ function LaneRow({
   query: string;
   focusedId: string | null;
   labelText?: boolean;
+  onToggleLabels?: () => void;
   onFocusCard: (id: string) => void;
   onEditCard: (colId: string, card: Card) => void;
   onAddCard: (colId: string) => void;
@@ -196,6 +201,7 @@ function LaneRow({
               focusedId={focusedId}
               labels={board.labels ?? []}
               labelText={labelText}
+              onToggleLabels={onToggleLabels}
               onFocusCard={onFocusCard}
               onAddCard={() => onAddCard(col.id)}
               onEditCard={(card) => onEditCard(col.id, card)}
@@ -213,11 +219,13 @@ export function SwimBoard({
   setBoard,
   query,
   labelText,
+  onToggleLabels,
 }: {
   board: BoardT;
   setBoard: (next: BoardT | ((p: BoardT) => BoardT)) => void;
   query: string;
   labelText?: boolean;
+  onToggleLabels?: () => void;
 }) {
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
@@ -338,6 +346,7 @@ export function SwimBoard({
                 query={query}
                 focusedId={focusedId}
                 labelText={labelText}
+                onToggleLabels={onToggleLabels}
                 onFocusCard={setFocusedId}
                 onEditCard={(colId, card) => setEditing({ colId, card })}
                 onAddCard={(colId) => handleAddCardInLane(colId, lane.id)}

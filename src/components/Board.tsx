@@ -54,12 +54,14 @@ export function Board({
   query,
   compact,
   labelText,
+  onToggleLabels,
 }: {
   board: BoardT;
   setBoard: (next: BoardT | ((p: BoardT) => BoardT)) => void;
   query: string;
   compact: boolean;
   labelText?: boolean;
+  onToggleLabels?: () => void;
 }) {
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
@@ -296,6 +298,7 @@ export function Board({
               collapsed={collapsedCols.has(col.id)}
               labels={board.labels ?? []}
               labelText={labelText}
+              onToggleLabels={onToggleLabels}
               onToggleCollapse={() => toggleCollapse(col.id)}
               onAddCard={(txt) => setBoard((b) => addCard(b, col.id, txt))}
               onEditCard={(card) => setEditing({ colId: col.id, card })}

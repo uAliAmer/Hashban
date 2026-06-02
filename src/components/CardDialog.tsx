@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { genId } from "@/lib/board";
-import { Check, Plus, Tag, Trash2, X } from "lucide-react";
+import { Check, Plus, Tag, Trash2 } from "lucide-react";
 
 const SWATCHES = [
   "",
@@ -16,6 +16,16 @@ const SWATCHES = [
   "#a855f7",
   "#ec4899",
 ];
+
+// readable text color over a label color (matches CardItem pills)
+function pillText(hex: string): string {
+  const h = hex.replace("#", "");
+  if (h.length < 6) return "#fff";
+  const r = parseInt(h.slice(0, 2), 16);
+  const g = parseInt(h.slice(2, 4), 16);
+  const b = parseInt(h.slice(4, 6), 16);
+  return (r * 299 + g * 587 + b * 114) / 1000 > 140 ? "#1a1a1a" : "#fff";
+}
 
 const PRIORITIES = [
   { value: "" as const, label: "None" },
@@ -177,31 +187,57 @@ export function CardDialog({
             })}
 
             {creatingLabel ? (
-              <div className="flex w-full items-center gap-1.5 rounded-md border border-zinc-700 bg-zinc-800/60 p-1.5">
+              <div className="w-full rounded-lg border border-zinc-700 bg-zinc-800/60 p-2">
+                {/* live preview pill */}
+                <div className="mb-2 flex items-center gap-2">
+                  <span
+                    className="inline-flex items-center rounded px-2 py-0.5 text-[11px] font-medium"
+                    style={{ background: labelDraftColor, color: pillText(labelDraftColor) }}
+                  >
+                    {labelDraftName.trim() || "Label preview"}
+                  </span>
+                </div>
                 <Input
                   value={labelDraftName}
                   onChange={(e) => setLabelDraftName(e.target.value)}
-                  placeholder="New label"
-                  className="h-6 flex-1 text-xs"
+                  placeholder="Label name"
+                  className="h-7 text-xs"
                   autoFocus
                   onKeyDown={(e) => {
+                    // Enter adds and keeps the form open for rapid entry; Escape closes
                     if (e.key === "Enter") {
+                      e.preventDefault();
                       onCreateLabel?.(labelDraftName.trim() || "Label", labelDraftColor);
-                      setLabelDraftName(""); setCreatingLabel(false);
+                      setLabelDraftName("");
                     }
                     if (e.key === "Escape") setCreatingLabel(false);
                   }}
                 />
-                <div className="flex gap-0.5">
+                <div className="mt-2 grid grid-cols-10 gap-1">
                   {LABEL_COLORS.map((c) => (
-                    <button key={c} onClick={() => setLabelDraftColor(c)}
-                      className={`h-4 w-4 rounded-full border ${labelDraftColor === c ? "border-white" : "border-transparent"}`}
-                      style={{ background: c }} />
+                    <button
+                      key={c}
+                      onClick={() => setLabelDraftColor(c)}
+                      aria-label={`Color ${c}`}
+                      className={`h-5 w-full rounded ${labelDraftColor === c ? "ring-2 ring-white" : "ring-1 ring-black/20"}`}
+                      style={{ background: c }}
+                    />
                   ))}
                 </div>
-                <button onClick={() => { onCreateLabel?.(labelDraftName.trim() || "Label", labelDraftColor); setLabelDraftName(""); setCreatingLabel(false); }}
-                  className="rounded p-1 text-green-400 hover:bg-zinc-700" aria-label="Add label"><Check size={12} /></button>
-                <button onClick={() => setCreatingLabel(false)} className="rounded p-1 text-zinc-400 hover:bg-zinc-700" aria-label="Cancel"><X size={12} /></button>
+                <div className="mt-2 flex items-center justify-end gap-1.5">
+                  <button
+                    onClick={() => setCreatingLabel(false)}
+                    className="rounded px-2 py-1 text-[11px] text-zinc-400 hover:bg-zinc-700 hover:text-zinc-200"
+                  >
+                    Done
+                  </button>
+                  <button
+                    onClick={() => { onCreateLabel?.(labelDraftName.trim() || "Label", labelDraftColor); setLabelDraftName(""); }}
+                    className="flex items-center gap-1 rounded bg-blue-600 px-2 py-1 text-[11px] font-medium text-white hover:bg-blue-500"
+                  >
+                    <Plus size={11} /> Add label
+                  </button>
+                </div>
               </div>
             ) : (
               <button

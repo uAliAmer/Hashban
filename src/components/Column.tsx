@@ -34,6 +34,7 @@ export function Column({
   collapsed,
   labels = [],
   labelText,
+  onToggleLabels,
   onToggleCollapse,
   onAddCard,
   onEditCard,
@@ -53,6 +54,7 @@ export function Column({
   collapsed: boolean;
   labels?: Label[];
   labelText?: boolean;
+  onToggleLabels?: () => void;
   onToggleCollapse: () => void;
   onAddCard: (txt: string) => void;
   onEditCard: (card: Card) => void;
@@ -261,6 +263,7 @@ export function Column({
               compact={compact}
               labels={labels}
               labelText={labelText}
+              onToggleLabels={onToggleLabels}
               onFocus={() => onFocusCard(card.id)}
               onEdit={() => onEditCard(card)}
               onDelete={() => onDeleteCard(card.id)}

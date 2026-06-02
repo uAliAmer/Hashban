@@ -60,15 +60,13 @@ export default function App() {
         setQuery={setQuery}
         compact={compact}
         setCompact={setCompact}
-        labelText={labelText}
-        setLabelText={setLabelText}
       />
       <main className="min-h-0 flex-1 overflow-auto">
         {/* §V.17 — swimlane grid when board.lanes present; normal column view otherwise */}
         {api.board.lanes && api.board.lanes.length > 0 ? (
-          <SwimBoard board={api.board} setBoard={api.setBoard} query={query} labelText={labelText} />
+          <SwimBoard board={api.board} setBoard={api.setBoard} query={query} labelText={labelText} onToggleLabels={() => setLabelText((v) => !v)} />
         ) : (
-          <Board board={api.board} setBoard={api.setBoard} query={query} compact={compact} labelText={labelText} />
+          <Board board={api.board} setBoard={api.setBoard} query={query} compact={compact} labelText={labelText} onToggleLabels={() => setLabelText((v) => !v)} />
         )}
       </main>
     </div>

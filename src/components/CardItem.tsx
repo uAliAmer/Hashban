@@ -22,30 +22,51 @@ function labelTextColor(hex: string): string {
   return (r * 299 + g * 587 + b * 114) / 1000 > 140 ? "#1a1a1a" : "#fff";
 }
 
-// §V.25 — label chips. labelText=true → text pill (Trello expanded), else color bar.
-function LabelChips({ labels, labelText }: { labels: Label[]; labelText?: boolean }) {
+// §V.25/V.26 — label chips. labelText=true → text pill (Trello expanded), else
+// color bar. Clicking a chip toggles the board-wide display mode (onToggle) —
+// stopPropagation so it never opens the card editor or starts a drag.
+function LabelChips({
+  labels,
+  labelText,
+  onToggle,
+}: {
+  labels: Label[];
+  labelText?: boolean;
+  onToggle?: () => void;
+}) {
   if (labels.length === 0) return null;
+  const stop = (e: React.SyntheticEvent) => e.stopPropagation();
+  const title = onToggle
+    ? labelText
+      ? "Click to collapse labels to colors"
+      : "Click to show label text"
+    : undefined;
   return (
     <>
-      {labels.map((lb) =>
-        labelText ? (
-          <span
-            key={lb.id}
-            className="shrink-0 truncate rounded px-1.5 py-0.5 text-[10px] font-medium leading-tight"
-            style={{ background: lb.color, color: labelTextColor(lb.color), maxWidth: "8rem" }}
-            title={lb.name}
-          >
-            {lb.name}
-          </span>
-        ) : (
-          <span
-            key={lb.id}
-            className="h-2 w-7 shrink-0 rounded-full"
-            style={{ background: lb.color }}
-            title={lb.name}
-          />
-        )
-      )}
+      {labels.map((lb) => (
+        <button
+          key={lb.id}
+          type="button"
+          disabled={!onToggle}
+          onClick={(e) => { stop(e); onToggle?.(); }}
+          onPointerDown={stop}
+          title={title ?? lb.name}
+          className={cn(
+            "shrink-0 leading-tight",
+            onToggle && "cursor-pointer",
+            labelText
+              ? "max-w-32 truncate rounded px-1.5 py-0.5 text-[10px] font-medium"
+              : "h-2 w-7 rounded-full"
+          )}
+          style={
+            labelText
+              ? { background: lb.color, color: labelTextColor(lb.color) }
+              : { background: lb.color }
+          }
+        >
+          {labelText ? lb.name : null}
+        </button>
+      ))}
     </>
   );
 }
@@ -60,6 +81,7 @@ export function CardItem({
   compact,
   labels = [],
   labelText,
+  onToggleLabels,
   onEdit,
   onDelete,
   onFocus,
@@ -70,6 +92,7 @@ export function CardItem({
   compact?: boolean;
   labels?: Label[];
   labelText?: boolean;
+  onToggleLabels?: () => void;
   onEdit: () => void;
   onDelete: () => void;
   onFocus: () => void;
@@ -133,7 +156,7 @@ export function CardItem({
         {card.color && (
           <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: card.color }} />
         )}
-        <LabelChips labels={cardLabels} labelText={labelText} />
+        <LabelChips labels={cardLabels} labelText={labelText} onToggle={onToggleLabels} />
         {card.priority && (
           <span className={cn("shrink-0 rounded px-1 text-[10px] font-semibold", PRIORITY_STYLE[card.priority])}>
             {card.priority}
@@ -180,7 +203,7 @@ export function CardItem({
 
       {cardLabels.length > 0 && (
         <div className="mb-1 flex flex-wrap items-center gap-1 pl-1 pr-6">
-          <LabelChips labels={cardLabels} labelText={labelText} />
+          <LabelChips labels={cardLabels} labelText={labelText} onToggle={onToggleLabels} />
         </div>
       )}
 

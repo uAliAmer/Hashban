@@ -9,7 +9,6 @@ import {
   Redo2,
   Search,
   Share2,
-  Tag,
   Trash,
   Undo2,
   Upload,
@@ -225,12 +224,10 @@ function ShareButton() {
 
 // ⋯ overflow menu — secondary actions
 function MoreMenu({
-  compact, setCompact, labelText, setLabelText, board, setBoard, onExport, onImport, onClear,
+  compact, setCompact, board, setBoard, onExport, onImport, onClear,
 }: {
   compact: boolean;
   setCompact: (v: boolean) => void;
-  labelText: boolean;
-  setLabelText: (v: boolean) => void;
   board: Board;
   setBoard: (next: Board | ((p: Board) => Board)) => void;
   onExport: () => void;
@@ -276,7 +273,6 @@ function MoreMenu({
             if (swimActive) setBoard(b => ({ ...b, lanes: [] }));
             else setBoard(b => opAddLane(b, "Lane 1"));
           }, swimActive)}
-          {item(labelText ? "Label colors only" : "Label text", <Tag size={14} />, () => setLabelText(!labelText), labelText)}
 
           <div className="my-1.5 border-t border-zinc-800" />
           <div className="mb-1 px-2 py-1 text-[10px] uppercase tracking-wider text-zinc-600">Board</div>
@@ -306,8 +302,6 @@ export function Toolbar({
   setQuery,
   compact,
   setCompact,
-  labelText,
-  setLabelText,
 }: {
   board: Board;
   setBoard: (next: Board | ((p: Board) => Board)) => void;
@@ -321,8 +315,6 @@ export function Toolbar({
   setQuery: (q: string) => void;
   compact: boolean;
   setCompact: (v: boolean) => void;
-  labelText: boolean;
-  setLabelText: (v: boolean) => void;
 }) {
   const confirm = useConfirm();
   const alert = useAlert();
@@ -417,7 +409,6 @@ export function Toolbar({
         </Button>
         <MoreMenu
           compact={compact} setCompact={setCompact}
-          labelText={labelText} setLabelText={setLabelText}
           board={board} setBoard={setBoard}
           onExport={exportJson}
           onImport={() => fileRef.current?.click()}
