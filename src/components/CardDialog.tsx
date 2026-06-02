@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from "react";
-import { Card, CheckItem } from "@/lib/board";
+import { Card, CheckItem, Label, LABEL_COLORS } from "@/lib/board";
 import { Dialog } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { genId } from "@/lib/board";
-import { Plus, Trash2 } from "lucide-react";
+import { Check, Plus, Tag, Trash2, X } from "lucide-react";
 
 const SWATCHES = [
   "",
@@ -27,13 +27,23 @@ const PRIORITIES = [
 export function CardDialog({
   open,
   card,
+  labels = [],
   onClose,
   onSave,
+  onToggleLabel,
+  onCreateLabel,
+  onUpdateLabel,
+  onDeleteLabel,
 }: {
   open: boolean;
   card: Card | null;
+  labels?: Label[];
   onClose: () => void;
   onSave: (patch: Partial<Card>) => void;
+  onToggleLabel?: (labelId: string) => void;
+  onCreateLabel?: (name: string, color: string) => void;
+  onUpdateLabel?: (id: string, patch: Partial<Omit<Label, "id">>) => void;
+  onDeleteLabel?: (id: string) => void;
 }) {
   const [txt, setTxt] = useState("");
   const [desc, setDesc] = useState("");
@@ -43,6 +53,11 @@ export function CardDialog({
   const [checklist, setChecklist] = useState<CheckItem[]>([]);
   const [newItem, setNewItem] = useState("");
   const newItemRef = useRef<HTMLInputElement>(null);
+  // §V.25 — label editor state
+  const [labelEditId, setLabelEditId] = useState<string | null>(null);
+  const [labelDraftName, setLabelDraftName] = useState("");
+  const [labelDraftColor, setLabelDraftColor] = useState(LABEL_COLORS[0]);
+  const [creatingLabel, setCreatingLabel] = useState(false);
 
   useEffect(() => {
     if (card) {
@@ -99,6 +114,107 @@ export function CardDialog({
         className="mb-3"
       />
 
+      {/* §V.25 — labels */}
+      {onToggleLabel && (
+        <>
+          <label className="mb-1 flex items-center gap-1 text-xs text-zinc-400">
+            <Tag size={11} /> Labels
+          </label>
+          <div className="mb-3 flex flex-wrap gap-1.5">
+            {labels.map((lb) => {
+              const active = card?.labels?.includes(lb.id);
+              const editing = labelEditId === lb.id;
+              if (editing) {
+                return (
+                  <div key={lb.id} className="flex w-full items-center gap-1.5 rounded-md border border-zinc-700 bg-zinc-800/60 p-1.5">
+                    <Input
+                      value={labelDraftName}
+                      onChange={(e) => setLabelDraftName(e.target.value)}
+                      placeholder="Label name"
+                      className="h-6 flex-1 text-xs"
+                      autoFocus
+                    />
+                    <div className="flex gap-0.5">
+                      {LABEL_COLORS.map((c) => (
+                        <button
+                          key={c}
+                          onClick={() => setLabelDraftColor(c)}
+                          className={`h-4 w-4 rounded-full border ${labelDraftColor === c ? "border-white" : "border-transparent"}`}
+                          style={{ background: c }}
+                        />
+                      ))}
+                    </div>
+                    <button onClick={() => { onUpdateLabel?.(lb.id, { name: labelDraftName.trim() || lb.name, color: labelDraftColor }); setLabelEditId(null); }}
+                      className="rounded p-1 text-green-400 hover:bg-zinc-700" aria-label="Save label"><Check size={12} /></button>
+                    <button onClick={() => { onDeleteLabel?.(lb.id); setLabelEditId(null); }}
+                      className="rounded p-1 text-red-400 hover:bg-zinc-700" aria-label="Delete label"><Trash2 size={12} /></button>
+                  </div>
+                );
+              }
+              return (
+                <div key={lb.id} className="group/lb relative">
+                  <button
+                    onClick={() => onToggleLabel(lb.id)}
+                    className="flex items-center gap-1 rounded px-2 py-1 text-[11px] font-medium transition-all"
+                    style={{
+                      background: active ? lb.color : `${lb.color}33`,
+                      color: active ? "#fff" : lb.color,
+                      outline: active ? `1px solid ${lb.color}` : "none",
+                    }}
+                  >
+                    {active && <Check size={10} />}
+                    {lb.name || "—"}
+                  </button>
+                  <button
+                    onClick={() => { setLabelEditId(lb.id); setLabelDraftName(lb.name); setLabelDraftColor(lb.color); }}
+                    className="absolute -right-1 -top-1 hidden h-3.5 w-3.5 items-center justify-center rounded-full bg-zinc-900 text-[8px] leading-none text-zinc-400 group-hover/lb:flex hover:text-zinc-100"
+                    aria-label="Edit label"
+                  >
+                    ✎
+                  </button>
+                </div>
+              );
+            })}
+
+            {creatingLabel ? (
+              <div className="flex w-full items-center gap-1.5 rounded-md border border-zinc-700 bg-zinc-800/60 p-1.5">
+                <Input
+                  value={labelDraftName}
+                  onChange={(e) => setLabelDraftName(e.target.value)}
+                  placeholder="New label"
+                  className="h-6 flex-1 text-xs"
+                  autoFocus
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      onCreateLabel?.(labelDraftName.trim() || "Label", labelDraftColor);
+                      setLabelDraftName(""); setCreatingLabel(false);
+                    }
+                    if (e.key === "Escape") setCreatingLabel(false);
+                  }}
+                />
+                <div className="flex gap-0.5">
+                  {LABEL_COLORS.map((c) => (
+                    <button key={c} onClick={() => setLabelDraftColor(c)}
+                      className={`h-4 w-4 rounded-full border ${labelDraftColor === c ? "border-white" : "border-transparent"}`}
+                      style={{ background: c }} />
+                  ))}
+                </div>
+                <button onClick={() => { onCreateLabel?.(labelDraftName.trim() || "Label", labelDraftColor); setLabelDraftName(""); setCreatingLabel(false); }}
+                  className="rounded p-1 text-green-400 hover:bg-zinc-700" aria-label="Add label"><Check size={12} /></button>
+                <button onClick={() => setCreatingLabel(false)} className="rounded p-1 text-zinc-400 hover:bg-zinc-700" aria-label="Cancel"><X size={12} /></button>
+              </div>
+            ) : (
+              <button
+                onClick={() => { setCreatingLabel(true); setLabelDraftName(""); setLabelDraftColor(LABEL_COLORS[0]); }}
+                className="flex items-center gap-1 rounded border border-dashed border-zinc-600 px-2 py-1 text-[11px] text-zinc-500 hover:border-zinc-400 hover:text-zinc-300"
+              >
+                <Plus size={11} /> New label
+              </button>
+            )}
+          </div>
+        </>
+      )}
+
       {/* §V.16 — priority */}
       <label className="mb-1 block text-xs text-zinc-400">Priority</label>
       <div className="mb-3 flex gap-1.5">
@@ -117,7 +233,7 @@ export function CardDialog({
         ))}
       </div>
 
-      <label className="mb-1 block text-xs text-zinc-400">Label color</label>
+      <label className="mb-1 block text-xs text-zinc-400">Card color</label>
       <div className="mb-3 flex gap-1.5">
         {SWATCHES.map((c) => (
           <button

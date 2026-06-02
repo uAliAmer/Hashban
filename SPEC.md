@@ -61,6 +61,8 @@ templateBoard(name: 'sprint'|'gtd'|'hiring'): Board  // preset boards
 - V22: compact view = ephemeral display toggle. ⊥ hash, ⊥ persisted (V11 pattern).
 - V23: col collapse = ephemeral per-col toggle. ⊥ hash, ⊥ persisted.
 - V24: board index stored in IndexedDB (`hashban` db, `boards` store). localStorage `hashban:boards` migrated on first open then removed. localStorage `hashban:last` (autosave cache) unchanged — single string, sync read required at init.
+- V25: card labels ∈ board-level `board.labels[]` registry (`{id,name,color}`). card carries `labels[]` = id refs, ⊥ inline copies. delete label → strip id from ∀ cards (`deleteLabel`). roundtrip lossless (V2).
+- V26: label display mode (text pill | color-only bar) = ephemeral global toggle. ⊥ hash, ⊥ persisted (V11 pattern). Trello-style: color-only = collapsed, text = expanded.
 
 ## §T — tasks
 ```
@@ -95,6 +97,8 @@ T27|x|multiple boards (localStorage index, board switcher in toolbar)|V21,V1
 T28|x|compact view (toolbar toggle, cards collapse to title-only rows)|V22
 T29|x|column collapse (fold column to slim vertical bar, ephemeral)|V23
 T30|x|IndexedDB board index (replace localStorage, migrate existing data)|V24
+T31|x|board label registry (Label type, create/edit/delete in card dialog, toggle on card, chips on card face)|V25,V2
+T32|x|label display toggle (toolbar: text pills vs color-only bars, Board+SwimBoard)|V26,V11
 ```
 
 ## §B — bugs

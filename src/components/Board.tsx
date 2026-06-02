@@ -20,14 +20,18 @@ import { Board as BoardT, Card, Col } from "@/lib/board";
 import {
   addCard,
   addColumn,
+  addLabel,
   deleteCard,
   deleteColumn,
+  deleteLabel,
   moveCard,
   moveColumn,
   renameColumn,
   setColumnColor,
   setColumnWip,
+  toggleCardLabel,
   updateCard,
+  updateLabel,
 } from "@/lib/ops";
 import { Column } from "./Column";
 import { CardItem } from "./CardItem";
@@ -49,11 +53,13 @@ export function Board({
   setBoard,
   query,
   compact,
+  labelText,
 }: {
   board: BoardT;
   setBoard: (next: BoardT | ((p: BoardT) => BoardT)) => void;
   query: string;
   compact: boolean;
+  labelText?: boolean;
 }) {
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
@@ -288,6 +294,8 @@ export function Board({
               focusedId={focusedId}
               compact={compact}
               collapsed={collapsedCols.has(col.id)}
+              labels={board.labels ?? []}
+              labelText={labelText}
               onToggleCollapse={() => toggleCollapse(col.id)}
               onAddCard={(txt) => setBoard((b) => addCard(b, col.id, txt))}
               onEditCard={(card) => setEditing({ colId: col.id, card })}
@@ -329,11 +337,19 @@ export function Board({
 
       <CardDialog
         open={!!editing}
-        card={editing?.card ?? null}
+        // live card — label toggles mutate the board, so re-read by id each render
+        card={editing ? board.cols.find((c) => c.id === editing.colId)?.cards.find((cd) => cd.id === editing.card.id) ?? editing.card : null}
+        labels={board.labels ?? []}
         onClose={() => setEditing(null)}
         onSave={(patch) => {
           if (editing) setBoard((b) => updateCard(b, editing.colId, editing.card.id, patch));
         }}
+        onToggleLabel={(labelId) => {
+          if (editing) setBoard((b) => toggleCardLabel(b, editing.colId, editing.card.id, labelId));
+        }}
+        onCreateLabel={(name, color) => setBoard((b) => addLabel(b, name, color))}
+        onUpdateLabel={(id, patch) => setBoard((b) => updateLabel(b, id, patch))}
+        onDeleteLabel={(id) => setBoard((b) => deleteLabel(b, id))}
       />
     </DndContext>
   );

@@ -23,6 +23,13 @@ export type CheckItem = {
   done: boolean;
 };
 
+// §V.25 — board-level label registry (Trello-style); cards reference by id
+export type Label = {
+  id: string;
+  name: string;
+  color: string;
+};
+
 export type Card = {
   id: string;
   txt: string;
@@ -32,6 +39,7 @@ export type Card = {
   checklist?: CheckItem[]; // §V.14
   priority?: "P1" | "P2" | "P3"; // §V.16
   laneId?: string; // §V.17
+  labels?: string[]; // §V.25 label ids
 };
 
 export type Lane = {
@@ -51,7 +59,15 @@ export type Board = {
   t: string; // board title
   cols: Col[];
   lanes?: Lane[]; // §V.17 optional swimlanes
+  labels?: Label[]; // §V.25 label registry
 };
+
+// preset palette for new labels
+export const LABEL_COLORS = [
+  "#ef4444", "#f97316", "#eab308", "#22c55e",
+  "#14b8a6", "#3b82f6", "#8b5cf6", "#ec4899",
+  "#64748b", "#84cc16",
+];
 
 // soft URL-length limit; §V.7
 export const SOFT_LIMIT = 8000;
@@ -242,10 +258,11 @@ export function templateBoard(name: string): Board | null {
 // ── Compact wire format (v2) — short keys reduce JSON size ~20% before compression ──
 
 type WireItem  = { i: string; t: string; k: boolean };
-type WireCard  = { i: string; x: string; ds?: string; c?: string; du?: string; ch?: WireItem[]; p?: string; li?: string };
+type WireCard  = { i: string; x: string; ds?: string; c?: string; du?: string; ch?: WireItem[]; p?: string; li?: string; lb?: string[] };
 type WireCol   = { i: string; n: string; d: WireCard[]; w?: number; co?: string };
 type WireLane  = { i: string; n: string };
-type WireBoard = { v: 2; t: string; c: WireCol[]; l?: WireLane[] };
+type WireLabel = { i: string; n: string; c: string };
+type WireBoard = { v: 2; t: string; c: WireCol[]; l?: WireLane[]; lb?: WireLabel[] };
 
 function toWire(b: Board): WireBoard {
   return {
@@ -262,6 +279,7 @@ function toWire(b: Board): WireBoard {
           if (cd.due)       wcard.du = cd.due;
           if (cd.priority)  wcard.p  = cd.priority;
           if (cd.laneId)    wcard.li = cd.laneId;
+          if (cd.labels?.length) wcard.lb = cd.labels;
           if (cd.checklist?.length) wcard.ch = cd.checklist.map((ci) => ({ i: ci.id, t: ci.txt, k: ci.done }));
           return wcard;
         }),
@@ -271,6 +289,7 @@ function toWire(b: Board): WireBoard {
       return wc;
     }),
     ...(b.lanes?.length ? { l: b.lanes.map((ln) => ({ i: ln.id, n: ln.name })) } : {}),
+    ...(b.labels?.length ? { lb: b.labels.map((lb) => ({ i: lb.id, n: lb.name, c: lb.color })) } : {}),
   };
 }
 
@@ -289,11 +308,13 @@ function fromWire(w: WireBoard): Board {
         if (wcard.du) cd.due      = wcard.du;
         if (wcard.p)  cd.priority = wcard.p as Card["priority"];
         if (wcard.li) cd.laneId   = wcard.li;
+        if (wcard.lb?.length) cd.labels = wcard.lb;
         if (wcard.ch) cd.checklist = wcard.ch.map((ci) => ({ id: ci.i, txt: ci.t, done: ci.k }));
         return cd;
       }),
     })),
     ...(w.l?.length ? { lanes: w.l.map((ln) => ({ id: ln.i, name: ln.n })) } : {}),
+    ...(w.lb?.length ? { labels: w.lb.map((lb) => ({ id: lb.i, name: lb.n, color: lb.c })) } : {}),
   };
 }
 
@@ -335,6 +356,15 @@ export function isBoard(x: unknown): x is Board {
       return typeof lane.id === "string" && typeof lane.name === "string";
     })) return false;
   }
+  // §V.25 — optional labels registry
+  if (b.labels !== undefined) {
+    if (!Array.isArray(b.labels)) return false;
+    if (!b.labels.every((l) => {
+      if (typeof l !== "object" || l === null) return false;
+      const lab = l as Record<string, unknown>;
+      return typeof lab.id === "string" && typeof lab.name === "string" && typeof lab.color === "string";
+    })) return false;
+  }
   return b.cols.every((c) => {
     if (typeof c !== "object" || c === null) return false;
     const col = c as Record<string, unknown>;
@@ -357,6 +387,11 @@ export function isBoard(x: unknown): x is Board {
           const ci = item as Record<string, unknown>;
           return typeof ci.id === "string" && typeof ci.txt === "string" && typeof ci.done === "boolean";
         })) return false;
+      }
+      // §V.25 — labels optional string-id array
+      if (card.labels !== undefined) {
+        if (!Array.isArray(card.labels)) return false;
+        if (!card.labels.every((id) => typeof id === "string")) return false;
       }
       return true;
     });

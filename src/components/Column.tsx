@@ -7,7 +7,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { useDroppable } from "@dnd-kit/core";
 import { ChevronLeft, Palette, Plus, Trash2 } from "lucide-react";
-import { Col, Card } from "@/lib/board";
+import { Col, Card, Label } from "@/lib/board";
 import { CardItem } from "./CardItem";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,6 +32,8 @@ export function Column({
   focusedId,
   compact,
   collapsed,
+  labels = [],
+  labelText,
   onToggleCollapse,
   onAddCard,
   onEditCard,
@@ -49,6 +51,8 @@ export function Column({
   focusedId: string | null;
   compact: boolean;
   collapsed: boolean;
+  labels?: Label[];
+  labelText?: boolean;
   onToggleCollapse: () => void;
   onAddCard: (txt: string) => void;
   onEditCard: (card: Card) => void;
@@ -255,6 +259,8 @@ export function Column({
               colId={col.id}
               focused={card.id === focusedId}
               compact={compact}
+              labels={labels}
+              labelText={labelText}
               onFocus={() => onFocusCard(card.id)}
               onEdit={() => onEditCard(card)}
               onDelete={() => onDeleteCard(card.id)}

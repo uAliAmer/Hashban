@@ -1,4 +1,4 @@
-import { Board, Card, CheckItem, Col, Lane, genId } from "./board";
+import { Board, Card, CheckItem, Col, Label, Lane, genId } from "./board";
 
 // Pure board transforms. Each returns a NEW board (immutable) so callers
 // pass result straight to setBoard -> commit (§V.1 §V.5).
@@ -170,6 +170,39 @@ export function setCardLane(b: Board, colId: string, cardId: string, laneId: str
     if (laneId) next.laneId = laneId;
     else delete next.laneId;
     return next;
+  });
+}
+
+// §V.25 — board-level label registry ops
+export function addLabel(b: Board, name: string, color: string): Board {
+  const label: Label = { id: genId(), name, color };
+  return { ...b, labels: [...(b.labels ?? []), label] };
+}
+
+export function updateLabel(b: Board, id: string, patch: Partial<Omit<Label, "id">>): Board {
+  return { ...b, labels: (b.labels ?? []).map((l) => l.id === id ? { ...l, ...patch } : l) };
+}
+
+export function deleteLabel(b: Board, id: string): Board {
+  // remove from registry AND strip from every card
+  const cols = b.cols.map((c) => ({
+    ...c,
+    cards: c.cards.map((cd) =>
+      cd.labels?.includes(id) ? { ...cd, labels: cd.labels.filter((x) => x !== id) } : cd
+    ),
+  }));
+  return { ...b, cols, labels: (b.labels ?? []).filter((l) => l.id !== id) };
+}
+
+// toggle a label id on a card
+export function toggleCardLabel(b: Board, colId: string, cardId: string, labelId: string): Board {
+  return mapCard(b, colId, cardId, (cd) => {
+    const cur = cd.labels ?? [];
+    const next = cur.includes(labelId) ? cur.filter((x) => x !== labelId) : [...cur, labelId];
+    const out = { ...cd };
+    if (next.length) out.labels = next;
+    else delete out.labels;
+    return out;
   });
 }
 

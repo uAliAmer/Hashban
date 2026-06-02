@@ -13,6 +13,8 @@ export default function App() {
   const [query, setQuery] = useState("");
   // §V.22 — compact view
   const [compact, setCompact] = useState(false);
+  // §V.25 — label display: false = color bars only, true = text pills (Trello-style)
+  const [labelText, setLabelText] = useState(false);
 
   // auto-save to sidebar: debounce 1.5s after each change.
   // guard: canUndo ensures we only save after a real user edit, not on initial load.
@@ -58,13 +60,15 @@ export default function App() {
         setQuery={setQuery}
         compact={compact}
         setCompact={setCompact}
+        labelText={labelText}
+        setLabelText={setLabelText}
       />
       <main className="min-h-0 flex-1 overflow-auto">
         {/* §V.17 — swimlane grid when board.lanes present; normal column view otherwise */}
         {api.board.lanes && api.board.lanes.length > 0 ? (
-          <SwimBoard board={api.board} setBoard={api.setBoard} query={query} />
+          <SwimBoard board={api.board} setBoard={api.setBoard} query={query} labelText={labelText} />
         ) : (
-          <Board board={api.board} setBoard={api.setBoard} query={query} compact={compact} />
+          <Board board={api.board} setBoard={api.setBoard} query={query} compact={compact} labelText={labelText} />
         )}
       </main>
     </div>

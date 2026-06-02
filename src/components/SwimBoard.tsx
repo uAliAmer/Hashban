@@ -14,16 +14,20 @@ import {
 } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { Plus, Trash2, GripVertical } from "lucide-react";
-import { Board as BoardT, Card, Lane } from "@/lib/board";
+import { Board as BoardT, Card, Label, Lane } from "@/lib/board";
 import {
   addCard,
+  addLabel,
   addLane,
   deleteCard,
+  deleteLabel,
   deleteLane,
   moveCard,
   renameLane,
   setCardLane,
+  toggleCardLabel,
   updateCard,
+  updateLabel,
 } from "@/lib/ops";
 import { CardItem } from "./CardItem";
 import { CardDialog } from "./CardDialog";
@@ -44,6 +48,8 @@ function CellDropZone({
   filteredCards,
   filtered,
   focusedId,
+  labels,
+  labelText,
   onAddCard,
   onEditCard,
   onDeleteCard,
@@ -55,6 +61,8 @@ function CellDropZone({
   filteredCards: Card[];
   filtered: boolean;
   focusedId: string | null;
+  labels: Label[];
+  labelText?: boolean;
   onAddCard: () => void;
   onEditCard: (card: Card) => void;
   onDeleteCard: (cardId: string) => void;
@@ -80,6 +88,8 @@ function CellDropZone({
             card={card}
             colId={colId}
             focused={card.id === focusedId}
+            labels={labels}
+            labelText={labelText}
             onFocus={() => onFocusCard(card.id)}
             onEdit={() => onEditCard(card)}
             onDelete={() => onDeleteCard(card.id)}
@@ -104,6 +114,7 @@ function LaneRow({
   board,
   query,
   focusedId,
+  labelText,
   onFocusCard,
   onEditCard,
   onAddCard,
@@ -115,6 +126,7 @@ function LaneRow({
   board: BoardT;
   query: string;
   focusedId: string | null;
+  labelText?: boolean;
   onFocusCard: (id: string) => void;
   onEditCard: (colId: string, card: Card) => void;
   onAddCard: (colId: string) => void;
@@ -182,6 +194,8 @@ function LaneRow({
               filteredCards={filteredCards}
               filtered={!!query}
               focusedId={focusedId}
+              labels={board.labels ?? []}
+              labelText={labelText}
               onFocusCard={onFocusCard}
               onAddCard={() => onAddCard(col.id)}
               onEditCard={(card) => onEditCard(col.id, card)}
@@ -198,10 +212,12 @@ export function SwimBoard({
   board,
   setBoard,
   query,
+  labelText,
 }: {
   board: BoardT;
   setBoard: (next: BoardT | ((p: BoardT) => BoardT)) => void;
   query: string;
+  labelText?: boolean;
 }) {
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
@@ -321,6 +337,7 @@ export function SwimBoard({
                 board={board}
                 query={query}
                 focusedId={focusedId}
+                labelText={labelText}
                 onFocusCard={setFocusedId}
                 onEditCard={(colId, card) => setEditing({ colId, card })}
                 onAddCard={(colId) => handleAddCardInLane(colId, lane.id)}
@@ -353,11 +370,19 @@ export function SwimBoard({
 
       <CardDialog
         open={!!editing}
-        card={editing?.card ?? null}
+        // live card — label toggles mutate the board, so re-read by id each render
+        card={editing ? board.cols.find((c) => c.id === editing.colId)?.cards.find((cd) => cd.id === editing.card.id) ?? editing.card : null}
+        labels={board.labels ?? []}
         onClose={() => setEditing(null)}
         onSave={(patch) => {
           if (editing) setBoard((b) => updateCard(b, editing.colId, editing.card.id, patch));
         }}
+        onToggleLabel={(labelId) => {
+          if (editing) setBoard((b) => toggleCardLabel(b, editing.colId, editing.card.id, labelId));
+        }}
+        onCreateLabel={(name, color) => setBoard((b) => addLabel(b, name, color))}
+        onUpdateLabel={(id, patch) => setBoard((b) => updateLabel(b, id, patch))}
+        onDeleteLabel={(id) => setBoard((b) => deleteLabel(b, id))}
       />
     </DndContext>
   );

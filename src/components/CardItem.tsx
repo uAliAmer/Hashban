@@ -2,7 +2,7 @@ import { useRef } from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { GripVertical, Trash2 } from "lucide-react";
-import { Card } from "@/lib/board";
+import { Card, Label } from "@/lib/board";
 import { cn } from "@/lib/utils";
 
 const PRIORITY_STYLE: Record<string, string> = {
@@ -10,6 +10,45 @@ const PRIORITY_STYLE: Record<string, string> = {
   P2: "bg-orange-700/80 text-orange-100",
   P3: "bg-yellow-700/80 text-yellow-100",
 };
+
+// readable text color (black/white) for a given hex bg — Trello-style label pills
+function labelTextColor(hex: string): string {
+  const h = hex.replace("#", "");
+  if (h.length < 6) return "#fff";
+  const r = parseInt(h.slice(0, 2), 16);
+  const g = parseInt(h.slice(2, 4), 16);
+  const b = parseInt(h.slice(4, 6), 16);
+  // perceived luminance
+  return (r * 299 + g * 587 + b * 114) / 1000 > 140 ? "#1a1a1a" : "#fff";
+}
+
+// §V.25 — label chips. labelText=true → text pill (Trello expanded), else color bar.
+function LabelChips({ labels, labelText }: { labels: Label[]; labelText?: boolean }) {
+  if (labels.length === 0) return null;
+  return (
+    <>
+      {labels.map((lb) =>
+        labelText ? (
+          <span
+            key={lb.id}
+            className="shrink-0 truncate rounded px-1.5 py-0.5 text-[10px] font-medium leading-tight"
+            style={{ background: lb.color, color: labelTextColor(lb.color), maxWidth: "8rem" }}
+            title={lb.name}
+          >
+            {lb.name}
+          </span>
+        ) : (
+          <span
+            key={lb.id}
+            className="h-2 w-7 shrink-0 rounded-full"
+            style={{ background: lb.color }}
+            title={lb.name}
+          />
+        )
+      )}
+    </>
+  );
+}
 
 // Click card body → open edit. Click + drag → move card.
 // moveRef tracks pointer displacement since last pointerdown;
@@ -19,6 +58,8 @@ export function CardItem({
   colId,
   focused,
   compact,
+  labels = [],
+  labelText,
   onEdit,
   onDelete,
   onFocus,
@@ -27,6 +68,8 @@ export function CardItem({
   colId: string;
   focused?: boolean;
   compact?: boolean;
+  labels?: Label[];
+  labelText?: boolean;
   onEdit: () => void;
   onDelete: () => void;
   onFocus: () => void;
@@ -57,6 +100,11 @@ export function CardItem({
   const checkTotal = card.checklist?.length ?? 0;
   const checkDone = card.checklist?.filter((i) => i.done).length ?? 0;
 
+  // §V.25 — resolve this card's label ids against the board registry
+  const cardLabels = card.labels?.length
+    ? labels.filter((lb) => card.labels!.includes(lb.id))
+    : [];
+
   // shared pointer tracking handlers
   const pointerHandlers = {
     onPointerDown: () => { moveRef.current = 0; },
@@ -85,6 +133,7 @@ export function CardItem({
         {card.color && (
           <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: card.color }} />
         )}
+        <LabelChips labels={cardLabels} labelText={labelText} />
         {card.priority && (
           <span className={cn("shrink-0 rounded px-1 text-[10px] font-semibold", PRIORITY_STYLE[card.priority])}>
             {card.priority}
@@ -127,6 +176,12 @@ export function CardItem({
     >
       {card.color && (
         <span className="absolute left-0 top-0 h-full w-1 rounded-l-md" style={{ background: card.color }} />
+      )}
+
+      {cardLabels.length > 0 && (
+        <div className="mb-1 flex flex-wrap items-center gap-1 pl-1 pr-6">
+          <LabelChips labels={cardLabels} labelText={labelText} />
+        </div>
       )}
 
       <div className="flex items-start gap-1 pl-1 pr-6">
