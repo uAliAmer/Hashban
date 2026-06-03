@@ -2,7 +2,7 @@
   "name": "hashban",
   "version": "0.1.0",
   "description": "Single-page Kanban whose entire board state lives in the URL hash. No backend.",
-  "license": "MIT",
+  "license": "AGPL-3.0-only",
   "type": "module",
   "scripts": {
     "dev": "vite",

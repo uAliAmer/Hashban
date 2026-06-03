@@ -103,4 +103,4 @@ npm run deploy:local   # npm run build + wrangler pages deploy dist
 
 ## License
 
-[MIT](./LICENSE)
+[GNU AGPL-3.0-only](./LICENSE)
